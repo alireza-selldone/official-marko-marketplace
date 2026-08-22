@@ -1,4 +1,4 @@
-import { loadCatalog } from "./shop-data.js";
+import { loadCatalog, promotionSafeProducts } from "./shop-data.js";
 import { esc } from "./app.js";
 
 const brandHref = (name) => `shop.html?brand=${encodeURIComponent(name)}`;
@@ -8,9 +8,8 @@ function initBrands(cat) {
   const brands = [...cat.brands].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
   const productMap = new Map(brands.map((brand) => [
     brand.name,
-    cat.products.filter((product) => product.brand === brand.name),
+    promotionSafeProducts(cat.products.filter((product) => product.brand === brand.name)),
   ]));
-  const total = cat.products.filter((product) => product.brand).length;
   const summary = document.querySelector("[data-brand-summary]");
   const featured = document.querySelector("[data-featured-brands]");
   const alphabet = document.querySelector("[data-brand-alphabet]");
@@ -18,7 +17,7 @@ function initBrands(cat) {
   const status = document.querySelector("[data-brand-status]");
   const search = document.querySelector("[data-brand-search]");
 
-  if (summary) summary.textContent = `${brands.length} brands across ${total} products`;
+  if (summary) summary.textContent = "Explore brands available across the marketplace.";
   if (!brands.length) {
     directory.innerHTML = `<div class="brand-empty"><h2>No brands yet</h2><p>Brand names will appear here as soon as products include them.</p><a class="btn btn--line" href="shop.html">Browse all products</a></div>`;
     if (search) search.disabled = true;
@@ -29,10 +28,9 @@ function initBrands(cat) {
   featured.innerHTML = popular.map((brand) => {
     const products = productMap.get(brand.name) || [];
     const product = products[0];
-    const categories = new Set(products.map((item) => item.catName).filter(Boolean)).size;
     return `<a class="brand-feature" href="${brandHref(brand.name)}">
       <span class="brand-feature__art">${product ? `<img src="${esc(product.image)}" alt="${esc(product.name)}" width="520" height="520">` : ""}</span>
-      <span class="brand-feature__copy"><strong>${esc(brand.name)}</strong><small>${brand.count} products · ${categories} ${categories === 1 ? "category" : "categories"}</small></span>
+      <span class="brand-feature__copy"><strong>${esc(brand.name)}</strong><small>Explore the collection</small></span>
     </a>`;
   }).join("");
 
@@ -49,15 +47,13 @@ function initBrands(cat) {
     alphabet.hidden = Boolean(needle);
     alphabet.innerHTML = [...groups.keys()].map((initial) =>
       `<a href="#brand-${encodeURIComponent(initial)}" aria-label="Brands beginning with ${esc(initial)}">${esc(initial)}</a>`).join("");
-    status.textContent = needle
-      ? `${matches.length} ${matches.length === 1 ? "brand" : "brands"} matching “${query.trim()}”`
-      : `${brands.length} brands, A to Z`;
+    status.textContent = needle ? `Matching “${query.trim()}”` : "Browse A to Z";
 
     directory.innerHTML = matches.length ? [...groups.entries()].map(([initial, items]) => `
       <section class="brand-group" id="brand-${esc(initial)}" aria-labelledby="brand-heading-${esc(initial)}">
         <h2 id="brand-heading-${esc(initial)}">${esc(initial)}</h2>
         <div class="brand-group__links">${items.map((brand) => `
-          <a href="${brandHref(brand.name)}"><span>${esc(brand.name)}</span><small>${brand.count} ${brand.count === 1 ? "product" : "products"}</small></a>`).join("")}</div>
+          <a href="${brandHref(brand.name)}"><span>${esc(brand.name)}</span></a>`).join("")}</div>
       </section>`).join("") : `<div class="brand-empty"><h2>No matching brands</h2><p>Try a shorter name or browse the full A–Z directory.</p></div>`;
   };
 

@@ -52,6 +52,11 @@ function initShop(cat) {
 
   const params = new URLSearchParams(location.search);
   const presetCat = params.get("cat");
+  const presetCats = new Set([
+    ...(presetCat ? [presetCat] : []),
+    ...(params.get("cats") || "").split(",").map((value) => value.trim()).filter(Boolean),
+  ]);
+  const presetLabel = params.get("label");
   const presetBrand = params.get("brand");
   const presetAudience = params.get("audience");
   const matchesPresetAudience = (product) => {
@@ -66,15 +71,15 @@ function initShop(cat) {
   };
   const contextualProducts = cat.products.filter((product) =>
     matchesPresetAudience(product) &&
-    (!presetCat || product.cat === presetCat) &&
+    (!presetCats.size || presetCats.has(product.cat)) &&
     (!presetBrand || product.brand === presetBrand));
 
   /* ---- Filter 1: collection ---- */
   const catBox = document.getElementById("catfilters");
   catBox.innerHTML = cat.cats.map((c) => `
     <label class="check">
-      <input type="checkbox" value="${c.slug}"${presetCat === c.slug ? " checked" : ""}>
-      ${esc(c.name)}<span class="cap">${c.count}</span>
+      <input type="checkbox" value="${c.slug}"${presetCats.has(c.slug) ? " checked" : ""}>
+      ${esc(c.name)}
     </label>`).join("");
 
   /* Size facets belong to the current audience/category/brand context. Building
@@ -86,7 +91,6 @@ function initShop(cat) {
   sizeBox.innerHTML = sizes.map((size) => `
     <label class="check">
       <input type="checkbox" value="${esc(size)}">${esc(size)}
-      <span class="cap">${contextualProducts.filter((p) => p.sizes?.includes(size)).length}</span>
     </label>`).join("");
 
   /* ---- Filter 4: brand ---- */
@@ -94,7 +98,7 @@ function initShop(cat) {
   brandBox.innerHTML = cat.brands.map((b) => `
     <label class="check">
       <input type="checkbox" value="${esc(b.name)}"${presetBrand === b.name ? " checked" : ""}>
-      ${esc(b.name)}<span class="cap">${b.count}</span>
+      ${esc(b.name)}
     </label>`).join("");
 
   /* ---- Filter 2: price, logarithmic ----
@@ -173,14 +177,14 @@ function initShop(cat) {
     const audienceTitle = presetAudience === "kids" ? "Kids"
       : presetAudience === "adults" ? "Women & Men"
       : audience?.title;
-    const pageName = one?.name || audienceTitle || presetBrand || "All products";
+    const pageName = one?.name || presetLabel || audienceTitle || presetBrand || "All products";
     title.textContent = pageName;
     if (crumbTitle) crumbTitle.textContent = pageName === "All products" ? "Products" : pageName;
     if (intro) intro.textContent = one ? one.blurb
-      : audienceTitle ? `${list.length} styles selected for ${audienceTitle.toLowerCase()}.`
-      : presetBrand ? `${list.length} products by ${presetBrand}.`
-      : `${cat.products.length} products across ${cat.cats.length} categories.`;
-    count.textContent = `${list.length} ${list.length === 1 ? "product" : "products"}`;
+      : audienceTitle ? `Styles selected for ${audienceTitle.toLowerCase()}.`
+      : presetBrand ? `Explore ${presetBrand}.`
+      : "Browse the full Marko marketplace.";
+    count.textContent = list.length ? "Available products" : "No products found";
     if (shown > list.length) shown = Math.max(PAGE, Math.ceil(list.length / PAGE) * PAGE);
     document.title = `${pageName} — Marko`;
 
@@ -190,9 +194,8 @@ function initShop(cat) {
       grid.innerHTML = page.map(cardHTML).join("");
       more.hidden = page.length >= list.length;
       if (!more.hidden) {
-        const left = list.length - page.length;
-        moreBtn.textContent = `Load more (${left} remaining)`;
-        moreCap.textContent = `Showing ${page.length} of ${list.length}`;
+        moreBtn.textContent = "Load more";
+        moreCap.textContent = "";
       }
     } else {
       more.hidden = true;

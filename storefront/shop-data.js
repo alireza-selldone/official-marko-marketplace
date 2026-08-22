@@ -492,6 +492,43 @@ export async function loadShop() {
 
 /* ---------- Catalog ---------- */
 let _cache = null;
+const CATALOG_CACHE_KEY = `storefront_catalog_v2_${SHOP.id || "unset"}`;
+
+function readCatalogSnapshot() {
+  try {
+    const snapshot = JSON.parse(localStorage.getItem(CATALOG_CACHE_KEY) || "null");
+    if (!snapshot?.catalog?.products?.length || !snapshot?.catalog?.cats?.length) return null;
+    return snapshot.catalog;
+  } catch { return null; }
+}
+
+/* Standing promotional-image safety rule.
+   Lower-body/rear-emphasis apparel is never selected for a homepage, brand,
+   seller, navigation, or other promotional image. Those products remain
+   available in normal listings and on their own product page. A future import
+   can also opt an item out explicitly with a `promo-ban` / `rear-angle` tag.
+   This deliberately favours a false-negative (one less promo candidate) over
+   ever resurfacing rear-angle apparel photography. */
+const PROMO_IMAGE_BAN = /\b(?:butt|booty|bum|scrunch|twerk|cheeky|thong|rear|backside|leggings?|jeggings?|bike(?:r)?\s+shorts?|yoga\s+shorts?|workout\s+shorts?|compression\s+shorts?|hot\s+pants?|shorts)\b/i;
+
+export function isPromotionSafeProduct(product) {
+  if (!product) return false;
+  const tagRows = product.raw?.tags ?? product.raw?.product_tags ?? product.tags ?? [];
+  const tags = (Array.isArray(tagRows) ? tagRows : [tagRows])
+    .map((tag) => String(tag?.name ?? tag?.title ?? tag ?? "").toLowerCase());
+  if (tags.some((tag) => /^(?:promo-ban|rear-angle|rear-view|back-view)$/.test(tag))) return false;
+  const searchable = [product.name, product.catName, product.cat, product.raw?.title, product.raw?.subtitle]
+    .filter(Boolean).join(" ");
+  return !PROMO_IMAGE_BAN.test(searchable);
+}
+
+export const promotionSafeProducts = (products = []) => products.filter(isPromotionSafeProduct);
+
+function writeCatalogSnapshot(catalog) {
+  if (!catalog?.products?.length || !catalog?.cats?.length) return;
+  try { localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), catalog })); }
+  catch (error) { console.warn("[storefront] live catalog snapshot could not be saved", error); }
+}
 
 export async function loadVendors() {
   if (_vendors) return _vendors;
@@ -512,13 +549,29 @@ function mirroredAudienceIds(id) {
 export async function loadCatalog() {
   if (_cache) return _cache;
 
-  const [listRes, allRes] = await Promise.all([
-    fetch(URL_PRODUCTS_LIST(), { mode: "cors", headers: { Accept: "application/json" } }),
-    fetch(URL_PRODUCTS_ALL(), { mode: "cors", headers: { Accept: "application/json" } }),
-  ]);
-  if (!listRes.ok) throw new Error(`products/list ${listRes.status}`);
-  const listJson = await listRes.json();
-  const allJson = allRes.ok ? await allRes.json() : { products: [] };
+  let listJson;
+  let allJson;
+  try {
+    const [listRes, allRes] = await Promise.all([
+      fetch(URL_PRODUCTS_LIST(), { mode: "cors", headers: { Accept: "application/json" } }),
+      fetch(URL_PRODUCTS_ALL(), { mode: "cors", headers: { Accept: "application/json" } }),
+    ]);
+    if (!listRes.ok) throw new Error(`products/list ${listRes.status}`);
+    if (!allRes.ok) throw new Error(`products/all ${allRes.status}`);
+    listJson = await listRes.json();
+    allJson = await allRes.json();
+    if (listJson?.error || allJson?.error || !listJson?.products?.length || !allJson?.products?.length) {
+      throw new Error(listJson?.error_msg || allJson?.error_msg || "live catalog response is empty");
+    }
+  } catch (error) {
+    const snapshot = readCatalogSnapshot();
+    if (snapshot) {
+      console.warn("[storefront] live catalog unavailable; using the most recent browser snapshot", error);
+      _cache = snapshot;
+      return _cache;
+    }
+    throw error;
+  }
 
   /* Category title AND icon both arrive live on products/all. The storefront
      already read the title; reading the icon too is what lets a shop with no
@@ -588,7 +641,10 @@ export async function loadCatalog() {
   let cats = orderCategories(cfg, index).map((id) => {
     const meta = index.get(id);
     const inCat = products.filter((p) => p.cat === meta.slug);
-    const hero = products.find((p) => p.id === Number(heroes[meta.slug])) || inCat[0];
+    const configuredHero = products.find((p) => p.id === Number(heroes[meta.slug]));
+    const hero = (isPromotionSafeProduct(configuredHero) && configuredHero)
+      || inCat.find(isPromotionSafeProduct)
+      || null;
     return {
       slug: meta.slug,
       name: meta.title || inCat[0]?.catName || meta.slug,
@@ -629,6 +685,7 @@ export async function loadCatalog() {
     hi: Math.max(...products.map((p) => p.price)),
     onSale: products.filter((p) => p.was).length,
   };
+  writeCatalogSnapshot(_cache);
   return _cache;
 }
 

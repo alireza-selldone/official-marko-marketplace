@@ -89,11 +89,11 @@ async function run(browser, { nCats, nProducts = 40, cfg = null, label }) {
     const grid = document.getElementById("catgrid");
     const section = grid ? grid.closest("section") : null;
     return {
-      tiles: document.querySelectorAll("#catgrid .market-cat").length,
+      tiles: document.querySelectorAll("#catgrid .home-dept-card").length,
       n: grid ? grid.dataset.n : null,
       cols: grid ? getComputedStyle(grid).gridTemplateColumns.split(" ").length : 0,
       hidden: section ? section.hidden : null,
-      slugs: [...document.querySelectorAll("#catgrid .market-cat")].map((a) => a.getAttribute("href")),
+      slugs: [...document.querySelectorAll("#catgrid .home-dept-card")].map((a) => a.getAttribute("href")),
       banner: !!document.querySelector(".tplbanner"),
       cards: document.querySelectorAll(".pcard").length,
       est: document.querySelector("[data-brand-est]") ? document.querySelector("[data-brand-est]").textContent : null,

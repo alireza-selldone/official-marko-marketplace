@@ -97,6 +97,19 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
 ## UI Rules
 
 - Dashboard UI should be English.
+- Rear-angle apparel photography is permanently banned from every promotional
+  placement. Products may remain in ordinary listings and their PDP, but all
+  homepage, navigation, brand, and seller promo selections must pass
+  `isPromotionSafeProduct()` / `promotionSafeProducts()` from
+  `storefront/shop-data.js`. Prefer excluding a questionable product to
+  resurfacing rear-angle imagery.
+- The homepage Featured Departments bento uses five live categories with at
+  least one technology tile when the catalog supplies one. Headlines and price
+  claims come from live catalog data; eyebrows do not repeat; exactly one tile
+  has a pill CTA. Tile backgrounds are flat solids and product cutouts have no
+  rotation, white paper cards, decorative circles, gradients, or shadows.
+  `npm run check:bento -- <url>` is the acceptance check and writes 1440px and
+  375px section screenshots to `artifacts/qa/`.
 - Use Bootstrap-compatible markup and Bootstrap Icons where the dashboard already uses them.
 - Keep the visual direction modern, minimal, operational, and compact.
 - Do not duplicate account controls; the user account menu belongs in the left sidebar profile.

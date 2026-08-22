@@ -121,7 +121,7 @@ const report = (label, res) => {
 
 // homepage, cart drawer, shop, checkout
 await p.goto(BASE + "/", { waitUntil: "domcontentloaded" });
-await p.waitForSelector("#catgrid .cat"); await prime(p);
+await p.waitForSelector("#catgrid .home-dept-card"); await prime(p);
 report("home", await p.evaluate(MEASURE));
 
 await p.goto(BASE + "/?open=cart", { waitUntil: "domcontentloaded" });
@@ -138,7 +138,7 @@ report("checkout summary", await p.evaluate(MEASURE));
 
 // every product page
 await p.goto(BASE + "/", { waitUntil: "domcontentloaded" });
-await p.waitForSelector("#catgrid .cat");
+await p.waitForSelector("#catgrid .home-dept-card");
 const ids = await p.evaluate(async () => (await import("/shop-data.js")).loadCatalog().then((c) => c.products.map((x) => x.id)));
 console.log(`\n  --- ${ids.length} product pages ---`);
 for (const id of ids) {
@@ -157,7 +157,7 @@ for (const id of ids) {
    a check that cannot go red is worse than no check at all. */
 console.log(NL + "  --- negative control ---");
 await p.goto(BASE + "/", { waitUntil: "domcontentloaded" });
-await p.waitForSelector("#catgrid .cat");
+await p.waitForSelector("#catgrid .home-dept-card");
 const control = await p.evaluate((src) => {
   const M = eval("(" + src + ")");
   const host = document.createElement("div");

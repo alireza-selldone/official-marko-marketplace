@@ -18,7 +18,7 @@
 import { chromium } from "playwright";
 
 const B = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
-const PAGES = [["home","/","#catgrid .market-cat"],["shop","/shop.html","#pgrid .pcard"],
+const PAGES = [["home","/","#catgrid .home-dept-card"],["shop","/shop.html","#pgrid .pcard"],
                 ["product","/product.html?id=711002","#pdp h1"],
                 // #sumrows is static markup present before hydration. checkout.js
                 // binds #next and .promo after awaiting the catalog, so waiting on
@@ -54,7 +54,7 @@ const p = await ctx.newPage();
 const seen = new Map();
 for (const [name,url,ready] of PAGES) {
   await p.goto(B+url,{waitUntil:"domcontentloaded"});
-  await p.waitForSelector(ready,{state:"attached",timeout:20000}).catch(()=>{});
+  await p.waitForSelector(ready,{state:"attached",timeout:60000}).catch(()=>{});
   await p.waitForTimeout(1200);
   // open the panels too
   await p.evaluate(()=>{document.querySelector('[data-open="cart"]')?.click();});

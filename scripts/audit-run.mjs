@@ -15,7 +15,7 @@ const AUDIT_SRC = readFileSync(
    as well as the local dev server: node scripts/audit-run.mjs https://… */
 
 const BASE = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
-const PAGES=[["home","/","#catgrid .market-cat"],["shop","/shop.html","#pgrid .pcard"],
+const PAGES=[["home","/","#catgrid .home-dept-card"],["shop","/shop.html","#pgrid .pcard"],
              ["product","/product.html?id=711002","#pdp h1"],["checkout","/checkout.html","#sumrows .sum__row"],
              ["about","/about-us",".prose h2"],["terms","/terms",".prose h2"],
              ["privacy","/privacy",".prose h2"],["contact","/contact-us",".prose h2"],

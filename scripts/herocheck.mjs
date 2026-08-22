@@ -1,4 +1,4 @@
-/* Verify the responsive Marko marketplace hero and its three seller stories. */
+/* Verify the responsive full-bleed Marko carousel and its equal-height slides. */
 import { chromium } from "playwright";
 
 const BASE = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
@@ -9,8 +9,11 @@ const pass = (message) => console.log(`  ok    ${message}`);
 
 for (const [width, height] of [[1440, 900], [1024, 900], [820, 1000], [390, 844]]) {
   const page = await browser.newPage({ viewport: { width, height } });
-  await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector("[data-market-hero-art] img", { timeout: 20000 });
+  await page.goto(`${BASE}/?hero=1&qa=herocheck`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() =>
+    document.querySelectorAll("[data-market-hero-dots] button").length === 3 &&
+    document.querySelector("[data-market-hero-art] img")?.complete,
+  null, { timeout: 60000 });
   await page.waitForTimeout(300);
 
   const stories = [];
@@ -24,6 +27,10 @@ for (const [width, height] of [[1440, 900], [1024, 900], [820, 1000], [390, 844]
       current: [...document.querySelectorAll("[data-market-hero-dots] button")]
         .findIndex((button) => button.getAttribute("aria-current") === "true"),
       images: document.querySelectorAll("[data-market-hero-art] img").length,
+      titleLines: document.querySelectorAll("[data-hero-title] span").length,
+      image: document.querySelector("[data-market-hero-art] img")?.getAttribute("src"),
+      naturalSize: [document.querySelector("[data-market-hero-art] img")?.naturalWidth, document.querySelector("[data-market-hero-art] img")?.naturalHeight],
+      height: document.querySelector("[data-market-hero]")?.getBoundingClientRect().height,
     })));
   }
 
@@ -41,19 +48,25 @@ for (const [width, height] of [[1440, 900], [1024, 900], [820, 1000], [390, 844]
 
   console.log(`\n  ${width}px`);
   state.overflow === 0 ? pass("no horizontal overflow") : fail(`${state.overflow}px horizontal overflow`);
-  stories.length === 3 && new Set(stories.map(({ story }) => story)).size === 3
-    ? pass("market, Alio, and Merino stories are distinct") : fail("three distinct stories did not render");
+  const expectedStories = ["performance", "home-cinema", "kids-play"];
+  stories.length === 3 && stories.every(({ story }, index) => story === expectedStories[index])
+    ? pass("performance, home-cinema, and kids-play stories are distinct") : fail("three expected stories did not render");
   stories.every(({ current }, index) => current === index)
     ? pass("all story controls select correctly") : fail("story selection state is incorrect");
-  stories.every(({ title, images }) => title.length > 10 && images >= 2)
-    ? pass("each story has visible copy and product art") : fail("a story is missing copy or product art");
+  stories.every(({ title, images, titleLines }) => title.length > 10 && images === 1 && titleLines === 3)
+    ? pass("each story has one full-bleed image and a three-line title") : fail("a story is missing its image or three-line copy");
+  const expectedImages = [
+    "assets/hero/marko-mens-performance-hd-v4.webp",
+    "assets/hero/marko-premium-tv-hd-v4.webp",
+    "assets/hero/marko-kids-play-hd-v4.webp",
+  ];
+  stories.every(({ image, naturalSize, height }, storyIndex) => image === expectedImages[storyIndex] && naturalSize[0] === 1920 && naturalSize[1] === 1080 && height === 620)
+    ? pass("all three slides use equal 1920×1080 assets on the same 620px stage")
+    : fail("slide image dimensions or stage height are inconsistent");
   const copyVisible = state.copy.top >= state.hero.top && state.copy.bottom <= state.hero.bottom;
   copyVisible ? pass("hero copy is fully visible") : fail("hero copy is clipped");
-  if (width <= 760) {
-    state.art.top >= state.copy.top ? pass("mobile art follows the copy flow") : fail("mobile art overlaps above the copy");
-  } else {
-    state.copy.width > 0 && state.art.width > 0 ? pass("desktop copy and product art both have space") : fail("desktop hero column collapsed");
-  }
+  state.art.top === state.hero.top && state.art.bottom === state.hero.bottom && state.art.width > 0
+    ? pass("the image stage covers the complete hero section") : fail("the full-bleed image does not cover the hero");
   await page.close();
 }
 

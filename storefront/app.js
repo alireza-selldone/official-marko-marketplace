@@ -4,7 +4,7 @@
 
 import {
   loadCatalog, money, img, catOf, byId,
-  swatchStyle, swatchLabel, isComposite,
+  swatchStyle, swatchLabel, isComposite, isPromotionSafeProduct,
   readBag, addToBag, removeFromBag, bagCount, bagLines, bagSubtotal,
   subscribe, loadOrders,
 } from "./shop-data.js";
@@ -56,9 +56,14 @@ function startSaleCountdowns() {
    pages still carry equivalent static markup as a no-JS fallback; this
    replacement runs before any header behavior is wired, so the live interface
    is identical everywhere and future chrome changes have one source. */
+const SHARED_PLATFORM_BAR_HTML = `<div class="sdbar" data-shared-platform="v1">
+  <p class="sdbar__in"><svg class="sdbar__hx" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.7 4.4 13a4.8 4.8 0 0 1 6.8-6.8l.8.8.8-.8A4.8 4.8 0 1 1 19.6 13Z"/></svg><span class="sdbar__made">Made with</span><a href="https://selldone.com" rel="noopener">Selldone</a></p>
+</div>`;
+
 const SHARED_HEADER_HTML = `<header class="hdr fashioni-header market-header" data-shared-chrome="v3">
   <div class="topbar"><span class="topbar__long" data-announce-long>Free pickup · Easy returns · Secure checkout</span><span class="topbar__short" data-announce-short>Easy returns · Secure checkout</span></div>
   <div class="market-primary">
+    <button class="market-menu-toggle" type="button" data-open="nav" aria-label="Open menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <a class="logo market-logo" href="index.html" aria-label="Marko home">marko<span aria-hidden="true">✦</span></a>
     <a class="market-location" href="shop.html"><small>How do you want your items?</small><b>Delivery or pickup</b></a>
     <button class="header-search" type="button" data-open="search" aria-label="Search everything at Marko"><span>Search everything at Marko</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg></button>
@@ -68,11 +73,11 @@ const SHARED_HEADER_HTML = `<header class="hdr fashioni-header market-header" da
     </div></div>
   </div>
   <div class="fashioni-navrow market-navrow"><nav class="nav audience-nav" aria-label="Main">
-    <a class="market-departments" href="shop.html">☰ Departments</a><a href="shop.html">All Products</a><a href="vendor.html?vendor=alio">Fashion</a><a href="vendor.html?vendor=merino">Electronics</a><a href="shop.html?audience=women">Women</a><a href="shop.html?audience=men">Men</a><a href="shop.html?audience=kids">Kids</a><a href="vendors.html">Sellers</a><a href="brands.html" data-nav-brands>Brands</a>
-  </nav><div class="mega"><div class="mega__grid" id="megagrid"></div></div></div>
+    <a class="market-departments" href="shop.html" data-nav-panel="departments" aria-haspopup="true" aria-expanded="false">☰ Departments</a><a href="shop.html?cats=activewear%2Cfootwear%2Cdresses-and-one-pieces%2Ctops-and-t-shirts%2Csunglasses%2Cbags-and-accessories%2Cshorts%2Cjackets-and-layers&amp;label=Fashion" data-nav-panel="fashion" aria-haspopup="true" aria-expanded="false">Fashion</a><a href="shop.html?cats=laptop%2Cmonitors%2Ctvs%2Cheadphones%2Cearbuds&amp;label=Electronics" data-nav-panel="electronics" aria-haspopup="true" aria-expanded="false">Electronics</a><a href="shop.html?audience=women" data-nav-panel="women" aria-haspopup="true" aria-expanded="false">Women</a><a href="shop.html?audience=men" data-nav-panel="men" aria-haspopup="true" aria-expanded="false">Men</a><a href="shop.html?audience=kids" data-nav-panel="kids" aria-haspopup="true" aria-expanded="false">Kids</a><a href="brands.html" data-nav-panel="brands" aria-haspopup="true" aria-expanded="false">Brands</a>
+  </nav><div class="mega-overlay" data-mega-overlay></div><div class="mega" aria-hidden="true"><div class="mega__grid" id="megagrid"></div></div></div>
 </header>`;
 
-const SHARED_FOOTER_HTML = `<footer class="ft ink market-footer"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo market-logo">marko<span>✦</span></p><p class="lede" data-brand-tagline>Everything you need, from people you can trust.</p></div><div class="ft__col"><h4>Departments</h4><ul data-collections></ul></div><div class="ft__col"><h4>Marketplace</h4><ul><li><a href="vendors.html">Meet our sellers</a></li><li><a href="vendor.html?vendor=alio">Shop Alio</a></li><li><a href="vendor.html?vendor=merino">Shop Merino</a></li><li><a href="brands.html">Shop brands</a></li></ul></div><div class="ft__col"><h4>Customer care</h4><ul><li><a href="/about-us">About Marko</a></li><li><a href="/terms#delivery">Delivery</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Marko Marketplace</span><span>Secure commerce by Selldone</span></div></div></footer>`;
+const SHARED_FOOTER_HTML = `<footer class="ft ink market-footer"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo market-logo">marko<span>✦</span></p><p class="lede" data-brand-tagline>Everything you need, from people you can trust.</p></div><div class="ft__col ft__departments"><h4>Departments</h4><div class="ft__links-split" data-collections></div></div><div class="ft__col"><h4>Shop</h4><ul><li><a href="vendors.html">Our sellers</a></li><li><a href="brands.html">Brands</a></li></ul></div><div class="ft__col"><h4>Customer care</h4><ul><li><a href="/about-us">About Marko</a></li><li><a href="/terms#delivery">Delivery</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Marko Marketplace</span><span>Secure commerce by Selldone</span></div></div></footer>`;
 
 const SHARED_OVERLAYS_HTML = `<div class="drawer ink" role="dialog" aria-modal="true" aria-label="Menu" aria-hidden="true"><div class="drawer__top"><span class="eyebrow">Menu</span><button class="xbtn" type="button" data-close>Close</button></div><nav data-drawer-nav aria-label="Mobile"></nav></div>
 <aside class="cart" role="dialog" aria-modal="true" aria-label="Shopping bag" aria-hidden="true"><div class="cart__hd"><span class="eyebrow mb0" data-cart-label>Your bag · 0</span><button class="xbtn" type="button" data-close>Close</button></div><div class="cart__body" data-cart-body></div><div class="cart__ft" data-cart-foot hidden><div class="sum__tot"><span class="eyebrow mb0">Subtotal</span><span class="price" data-cart-total>$0</span></div><a class="btn btn--full" href="checkout.html">Checkout</a><p class="cap center">Delivery, taxes, and payment are confirmed by Selldone.</p></div></aside>
@@ -87,6 +92,11 @@ function initSharedChrome() {
   if (header && header.dataset.sharedChrome !== "v3") {
     header.outerHTML = SHARED_HEADER_HTML;
   }
+
+  const liveHeader = document.querySelector("header.hdr,header.cohdr");
+  const platformBar = document.querySelector(".sdbar");
+  if (platformBar) platformBar.outerHTML = SHARED_PLATFORM_BAR_HTML;
+  else liveHeader?.insertAdjacentHTML("beforebegin", SHARED_PLATFORM_BAR_HTML);
 
   const footer = document.querySelector("footer.ft");
   if (footer) footer.outerHTML = SHARED_FOOTER_HTML;
@@ -111,7 +121,7 @@ export function cardHTML(p) {
         ${saleBadge}
         <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" width="500" height="500" data-card-image>
       </div>
-      <p class="pcard__meta">${p.vendorName ? `Sold by ${esc(p.vendorName)}` : esc(p.brand || p.catName)}</p>
+      <p class="pcard__meta">${esc(p.brand || p.catName)}</p>
       <span class="pcard__name">${esc(p.name)}</span>
       <p class="price mb0 pcard__price">${p.was ? `<s>${money(p.was)}</s>` : ""}<span class="price__now">${p.range?.varies ? `<span class="price__from">from</span> ${money(p.range.from)}` : money(p.price)}</span></p>
     </a>
@@ -217,11 +227,11 @@ async function fillBrandCopy() {
 
 /* ---------- Theme picker ---------- */
 const FASHIONI_THEMES = [
-  { id: "blue", name: "Atelier", description: "Ink blue and warm coral", swatch: "#24415A" },
-  { id: "violet", name: "Plum", description: "Deep plum and soft orchid", swatch: "#6B365B" },
-  { id: "emerald", name: "Forest", description: "Evergreen and clay", swatch: "#315C4C" },
-  { id: "amber", name: "Sand", description: "Warm camel and denim", swatch: "#9A6237" },
-  { id: "rose", name: "Rose", description: "Muted rose and deep teal", swatch: "#A8475B" },
+  { id: "rose", name: "Coral", swatch: "#E54832" },
+  { id: "blue", name: "Ocean", swatch: "#1673D1" },
+  { id: "emerald", name: "Forest", swatch: "#16855D" },
+  { id: "violet", name: "Plum", swatch: "#7D4CC2" },
+  { id: "amber", name: "Amber", swatch: "#D87910" },
 ];
 
 function initThemePicker() {
@@ -261,15 +271,14 @@ function initThemePicker() {
     picker.dataset.themePicker = "";
     picker.innerHTML = `<button class="theme-picker__trigger" type="button" data-theme-trigger aria-haspopup="menu" aria-expanded="false">
       <span class="theme-picker__swatch" aria-hidden="true"></span>
-      <span data-theme-current>Atelier</span>
+      <span data-theme-current>Ocean</span>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
     </button>
     <span class="theme-picker__menu" data-theme-menu role="menu" aria-label="Colour theme" hidden>
-      <span class="theme-picker__title">Colour theme</span>
-      ${FASHIONI_THEMES.map(({ id, name, description, swatch }) =>
+      ${FASHIONI_THEMES.map(({ id, name, swatch }) =>
         `<button class="theme-picker__item" type="button" role="menuitemradio" data-theme-option="${id}" aria-checked="false" style="--swatch:${swatch}">
           <span class="theme-picker__swatch" aria-hidden="true"></span>
-          <span><strong>${name}</strong><small>${description}</small></span>
+          <strong>${name}</strong>
           <span class="theme-picker__check" aria-hidden="true">✓</span>
         </button>`
       ).join("")}
@@ -420,75 +429,179 @@ export function initAcc(root = document) {
 function fillNav() {
   const mega = document.getElementById("megagrid");
   if (mega) {
-    const audienceLinks = (CAT.audiences || []).map((a) =>
-      `<a href="shop.html?audience=${a.slug}">${esc(a.title)} <small>${a.count}</small></a>`).join("");
-    const categoryLinks = CAT.cats.map((c) =>
-      `<a href="shop.html?cat=${c.slug}">${esc(c.name)} <small>${c.count}</small></a>`).join("");
-    const brandLinks = CAT.brands.slice(0, 8).map((b) =>
-      `<a href="shop.html?brand=${encodeURIComponent(b.name)}">${esc(b.name)} <small>${b.count}</small></a>`).join("");
-    const visualLinks = (CAT.audiences || []).slice(0, 3).map((a) => `
-      <a class="mega__visual" href="shop.html?audience=${a.slug}">
-        <img src="${a.image}" alt="${esc(a.title)} fashion" loading="lazy" width="220" height="220">
-        <b>${esc(a.title)}</b>
-      </a>`).join("");
-    const catalogueMenu = `
-      <div class="mega__column"><b>Shop by department</b>${audienceLinks}</div>
-      <div class="mega__column"><b>Shop by category</b>${categoryLinks}</div>
-      <div class="mega__column"><b>Popular brands</b>${brandLinks}</div>
-      <div class="mega__visuals">${visualLinks}</div>`;
-
-    const popular = CAT.brands.slice(0, 12);
-    const brandColumn = (items, title) => `<div class="mega__column"><b>${title}</b>${items.map((brand) =>
-      `<a href="shop.html?brand=${encodeURIComponent(brand.name)}">${esc(brand.name)} <small>${brand.count}</small></a>`).join("")}</div>`;
-    const brandVisuals = popular.slice(0, 3).map((brand) => {
-      const product = CAT.products.find((item) => item.brand === brand.name);
-      return `<a class="mega__visual" href="shop.html?brand=${encodeURIComponent(brand.name)}">
-        ${product ? `<img src="${esc(product.image)}" alt="${esc(brand.name)} product" width="220" height="220">` : ""}
-        <b>${esc(brand.name)}</b><small>${brand.count} products</small>
+    const row = mega.closest(".fashioni-navrow");
+    const panel = mega.closest(".mega");
+    const overlay = row?.querySelector("[data-mega-overlay]");
+    const navLinks = [...(row?.querySelectorAll("[data-nav-panel]") || [])];
+    const category = (slug) => CAT.cats.find((item) => item.slug === slug);
+    const audience = (slug) => CAT.audiences?.find((item) => item.slug === slug);
+    const linkRow = ({ label, href }) =>
+      `<a href="${href}"><span>${esc(label)}</span></a>`;
+    const groupedCategory = (label, slugs) => {
+      const rows = slugs.map(category).filter(Boolean);
+      const count = rows.reduce((sum, item) => sum + Number(item.count || 0), 0);
+      const query = encodeURIComponent(rows.map((item) => item.slug).join(","));
+      return { label, count, href: `shop.html?cats=${query}&label=${encodeURIComponent(label)}` };
+    };
+    const audienceRows = ["women", "men", "girls", "boys", "baby"]
+      .map(audience).filter(Boolean).map((item) => ({
+        label: item.title, count: item.count, href: `shop.html?audience=${item.slug}`,
+      }));
+    const fashionRows = [
+      groupedCategory("Activewear", ["activewear"]),
+      groupedCategory("Footwear", ["footwear"]),
+      groupedCategory("Dresses & One-Pieces", ["dresses-and-one-pieces"]),
+      groupedCategory("Tops & T-Shirts", ["tops-and-t-shirts"]),
+      groupedCategory("Sunglasses", ["sunglasses"]),
+      groupedCategory("Bags & Accessories", ["bags-and-accessories"]),
+      groupedCategory("Bottoms & Layers", ["shorts", "jackets-and-layers"]),
+    ].filter((item) => item.count);
+    const microphone = category("microphones");
+    const audioSlugs = ["headphones", "earbuds"];
+    const techRows = [
+      groupedCategory("Laptops", ["laptop"]),
+      groupedCategory("Displays & TVs", ["monitors", "tvs"]),
+      groupedCategory("Audio", audioSlugs),
+      ...(Number(microphone?.count) >= 10 ? [groupedCategory("Microphones", ["microphones"])] : []),
+    ].filter((item) => item.count);
+    const popularBrands = [...CAT.brands]
+      .sort((a, b) => Number(b.count) - Number(a.count) || a.name.localeCompare(b.name))
+      .slice(0, 12);
+    const topBrandRows = popularBrands.slice(0, 6).map((brand) => ({
+      label: brand.name, count: brand.count,
+      href: `shop.html?brand=${encodeURIComponent(brand.name)}`,
+    }));
+    const visual = ({ href, image, label, detail = "", alt = label }) => `
+      <a class="mega__visual" href="${href}">
+        <img src="${esc(image || "")}" alt="${esc(alt)}" loading="lazy" width="320" height="220">
+        <span><b>${esc(label)}</b>${detail}</span>
       </a>`;
+    const women = audience("women");
+    const techHero = category("laptop") || category("monitors");
+    const fashionArt = [category("activewear"), category("dresses-and-one-pieces")].filter(Boolean);
+    const techArt = [category("laptop"), category("tvs") || category("monitors")].filter(Boolean);
+    const departmentsMenu = `
+      <div class="mega__column"><b>Shop by audience</b>${audienceRows.map(linkRow).join("")}</div>
+      <div class="mega__column"><b>Fashion</b>${fashionRows.map(linkRow).join("")}</div>
+      <div class="mega__column"><b>Tech</b>${techRows.map(linkRow).join("")}</div>
+      <div class="mega__column"><b>Top brands</b>${topBrandRows.map(linkRow).join("")}<a class="mega__text-link" href="brands.html">View all brands <span aria-hidden="true">→</span></a></div>
+      <div class="mega__visuals mega__visuals--two">
+        ${visual({ href: "shop.html?audience=women", image: women?.image, label: "Women's edit" })}
+        ${visual({ href: "shop.html?cats=laptop%2Cmonitors%2Ctvs&label=New%20in%20tech", image: techHero?.image, label: "New in tech" })}
+      </div>
+      <div class="mega__footer"><a href="shop.html">View all products <span aria-hidden="true">→</span></a></div>`;
+    const compactCategoryPanel = (title, rows, tiles) => {
+      const tileMarkup = tiles.slice(0, 2).map((item) => visual({
+        href: `shop.html?cat=${encodeURIComponent(item.slug)}`,
+        image: item.image,
+        label: item.name,
+      })).join("");
+      return `<div class="mega__compact"><div class="mega__column"><b>${esc(title)}</b>${rows.map(linkRow).join("")}</div><div class="mega__visuals mega__visuals--two">${tileMarkup}</div></div>`;
+    };
+    const audiencePanel = (slug, title) => {
+      const slugs = slug === "kids" ? ["girls", "boys"] : [slug];
+      const rows = CAT.cats.map((item) => ({
+        label: item.name,
+        count: CAT.products.filter((product) => slugs.some((value) => product.audiences?.includes(value)) && product.cat === item.slug).length,
+        href: `shop.html?audience=${slug}&cat=${item.slug}`,
+      })).filter((item) => item.count).sort((a, b) => b.count - a.count).slice(0, 6);
+      const tiles = rows.slice(0, 2).map((item, index) => {
+        const cat = category(new URL(item.href, location.href).searchParams.get("cat"));
+        return visual({
+          href: item.href,
+          image: cat?.image || audience(slugs[index] || slugs[0])?.image,
+          label: index ? `New in ${title.toLowerCase()}` : `${title} edit`,
+        });
+      }).join("");
+      return `<div class="mega__compact mega__compact--audience"><div class="mega__column"><b>${esc(title)}</b>${rows.map(linkRow).join("")}<a class="mega__text-link" href="shop.html?audience=${slug}">Shop all ${esc(title.toLowerCase())} →</a></div><div class="mega__visuals mega__visuals--two">${tiles}</div></div>`;
+    };
+    const brandVisuals = popularBrands.slice(0, 2).map((brand) => {
+      const product = CAT.products.find((item) => item.brand === brand.name && isPromotionSafeProduct(item));
+      return visual({
+        href: `shop.html?brand=${encodeURIComponent(brand.name)}`,
+        image: product?.image,
+        label: brand.name,
+        alt: `${brand.name} product`,
+      });
     }).join("");
     const brandMenu = `
-      <div class="mega__column mega__intro"><b>Shop brands</b>
-        <a href="brands.html"><strong>All ${CAT.brands.length} brands</strong></a>
-        <a href="brands.html#featured">Popular brands</a>
-        <a href="brands.html#all-brands">A–Z directory</a>
-        <small>${CAT.products.filter((product) => product.brand).length} branded products</small>
-      </div>
-      ${brandColumn(popular.slice(0, 6), "Most products")}
-      ${brandColumn(popular.slice(6, 12), "More brands")}
-      <div class="mega__visuals">${brandVisuals}</div>`;
-
-    const showMenu = (mode) => {
-      const brands = mode === "brands";
-      mega.innerHTML = brands ? brandMenu : catalogueMenu;
-      mega.closest(".mega")?.classList.toggle("mega--brands", brands);
+      <div class="mega__brands-head"><b>Popular brands</b><div class="mega__brand-links"><a href="brands.html">All brands</a><a href="brands.html#all-brands">A–Z directory</a></div></div>
+      <div class="mega__brand-list">${popularBrands.map((brand) => linkRow({ label: brand.name, count: brand.count, href: `shop.html?brand=${encodeURIComponent(brand.name)}` })).join("")}</div>
+      <div class="mega__visuals mega__visuals--two mega__visuals--brands">${brandVisuals}</div>`;
+    const menus = {
+      departments: departmentsMenu,
+      fashion: compactCategoryPanel("Fashion categories", fashionRows, fashionArt),
+      electronics: compactCategoryPanel("Tech categories", techRows, techArt),
+      women: audiencePanel("women", "Women"),
+      men: audiencePanel("men", "Men"),
+      kids: audiencePanel("kids", "Kids"),
+      brands: brandMenu,
     };
-    showMenu("catalogue");
-
-    mega.closest(".fashioni-navrow")?.querySelectorAll(".audience-nav a").forEach((link) => {
-      const mode = link.hasAttribute("data-nav-brands") ? "brands" : "catalogue";
-      link.addEventListener("pointerenter", () => showMenu(mode));
-      link.addEventListener("focus", () => showMenu(mode));
+    let closeTimer = 0;
+    const closeMenu = () => {
+      clearTimeout(closeTimer);
+      row?.classList.remove("has-open-mega");
+      panel?.classList.remove("is-open");
+      overlay?.classList.remove("is-open");
+      panel?.setAttribute("aria-hidden", "true");
+      navLinks.forEach((link) => link.setAttribute("aria-expanded", "false"));
+    };
+    const showMenu = (mode, trigger) => {
+      clearTimeout(closeTimer);
+      mega.innerHTML = menus[mode] || departmentsMenu;
+      panel?.classList.toggle("mega--departments", mode === "departments");
+      panel?.classList.toggle("mega--brands", mode === "brands");
+      panel?.classList.toggle("mega--compact", !["departments", "brands"].includes(mode));
+      row?.classList.add("has-open-mega");
+      panel?.classList.add("is-open");
+      overlay?.classList.add("is-open");
+      panel?.setAttribute("aria-hidden", "false");
+      navLinks.forEach((link) => link.setAttribute("aria-expanded", String(link === trigger)));
+    };
+    navLinks.forEach((link) => {
+      const open = () => showMenu(link.dataset.navPanel, link);
+      link.addEventListener("pointerenter", open);
+      link.addEventListener("focus", open);
+    });
+    row?.addEventListener("pointerleave", () => { closeTimer = window.setTimeout(closeMenu, 120); });
+    row?.addEventListener("pointerenter", () => clearTimeout(closeTimer));
+    row?.addEventListener("focusout", (event) => {
+      if (!row.contains(event.relatedTarget)) closeMenu();
+    });
+    row?.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const activeTrigger = row.querySelector('[aria-expanded="true"]');
+        closeMenu();
+        activeTrigger?.focus();
+      }
     });
   }
 
-  document.querySelectorAll("[data-collections]").forEach((ul) => {
-    ul.innerHTML = (CAT.audiences || []).map((a) =>
-      `<li><a href="shop.html?audience=${a.slug}">${esc(a.title)}</a></li>`).join("") +
-      CAT.cats.slice(0, 3).map((c) =>
-      `<li><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a></li>`).join("") +
-      `<li><a href="shop.html"><b>View all categories</b></a></li>`;
+  document.querySelectorAll("[data-collections]").forEach((container) => {
+    const audiences = (CAT.audiences || []).filter((item) =>
+      ["women", "men", "girls", "boys", "baby"].includes(item.slug));
+    const links = [
+      ...audiences.map((item) => ({ href: `shop.html?audience=${item.slug}`, label: item.title })),
+      { href: "shop.html?cats=activewear%2Cfootwear%2Cdresses-and-one-pieces%2Ctops-and-t-shirts%2Csunglasses%2Cbags-and-accessories%2Cshorts%2Cjackets-and-layers&label=Fashion", label: "Fashion" },
+      { href: "shop.html?cats=laptop%2Cmonitors%2Ctvs%2Cheadphones%2Cearbuds&label=Electronics", label: "Electronics" },
+      { href: "shop.html?cat=activewear", label: "Activewear" },
+      { href: "shop.html?cat=footwear", label: "Footwear" },
+      { href: "shop.html?cat=bags-and-accessories", label: "Bags & accessories" },
+      { href: "shop.html", label: "View all products" },
+    ];
+    const midpoint = Math.ceil(links.length / 2);
+    const list = (items) => `<ul>${items.map((item) => `<li><a href="${item.href}">${esc(item.label)}</a></li>`).join("")}</ul>`;
+    container.innerHTML = list(links.slice(0, midpoint)) + list(links.slice(midpoint));
   });
 
   document.querySelectorAll("[data-drawer-nav]").forEach((nav) => {
     nav.innerHTML =
-      `<a href="shop.html">All Products<small>${CAT.products.length} products</small></a>` +
+      `<a href="shop.html">All Products</a>` +
       (CAT.audiences || []).map((a) =>
-      `<a href="shop.html?audience=${a.slug}">${esc(a.title)}<small>${a.count} products</small></a>`).join("") +
+      `<a href="shop.html?audience=${a.slug}">${esc(a.title)}</a>`).join("") +
       CAT.cats.map((c) =>
-        `<a href="shop.html?cat=${c.slug}">${esc(c.name)}<small>${c.count} products · from ${money(c.from)}</small></a>`).join("") +
-      `<a href="vendors.html">Sellers<small>Alio fashion · Merino technology</small></a>` +
-      `<a href="brands.html">Brands<small>${CAT.brands.length} brands</small></a>` +
+        `<a href="shop.html?cat=${c.slug}">${esc(c.name)}</a>`).join("") +
+      `<a href="brands.html">Brands</a>` +
       `<a href="/contact-us">Customer support</a>`;
   });
 }
@@ -638,7 +751,7 @@ function initSearch() {
     const q = norm(input.value).trim();
     if (!q) {
       out.innerHTML = "";
-      count.textContent = `${CAT.products.length} products in the catalog`;
+      count.textContent = "Search by product, brand, or category.";
       return;
     }
     // Every term must appear somewhere in the record, so "molino gold" narrows
@@ -649,7 +762,7 @@ function initSearch() {
       return terms.every((t) => hay.includes(t));
     });
 
-    count.textContent = hits.length === 1 ? "1 product" : `${hits.length} products`;
+    count.textContent = hits.length ? "Matching products" : "No matching products";
     out.innerHTML = hits.length
       ? hits.map((p) => `<a class="sres${saleBadgeHTML(p, "search") ? " has-timed-sale" : ""}" href="product.html?id=${p.id}">
           <span class="sres__art">${saleBadgeHTML(p, "search")}<img src="${p.image}" alt="" loading="lazy" width="56" height="56"></span>

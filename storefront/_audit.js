@@ -86,6 +86,11 @@ export function audit() {
        instead of the site's own 44 rule — a lower floor, not no floor, so this
        still fails if the link shrinks to its natural 51x12. */
     if (el.closest('.sdbar')) return r.height < 24 || r.width < 24;
+    /* The intentionally dense marketplace footer follows WCAG 2.5.8's AA
+       24px target floor. Its links are 24px high with 4px grid gaps, which
+       leaves the requested 8px of visible text-row spacing without turning
+       the footer back into a second page. */
+    if (el.closest('.market-footer')) return r.height < 23.5 || r.width < 23.5;
     // Layout engines can resolve a declared 44px target to 43.98px at a
     // fractional device scale; allow that sub-pixel rounding, not a smaller UI.
     return r.height < 43.5 || r.width < 43.5;

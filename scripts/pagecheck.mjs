@@ -44,10 +44,11 @@ for (const p of ALL) {
   const header = await page.evaluate(() => ({
     version: document.querySelector("header")?.getAttribute("data-shared-chrome"),
     logo: document.querySelector(".market-logo")?.textContent?.trim(),
-    sellers: document.querySelector('nav a[href="vendors.html"]')?.textContent?.trim(),
+    nav: [...document.querySelectorAll(".audience-nav > a")].map((link) => link.textContent.trim().replace(/^☰\s*/, "")),
     search: document.querySelector(".header-search")?.textContent?.trim(),
   }));
-  if (header.version !== "v3" || header.logo !== "marko✦" || header.sellers !== "Sellers" || !header.search) {
+  const expectedNav = ["Departments", "Fashion", "Electronics", "Women", "Men", "Kids", "Brands"];
+  if (header.version !== "v3" || header.logo !== "marko✦" || header.nav.join("|") !== expectedNav.join("|") || !header.search) {
     fail(`${p}: incomplete Marko marketplace header ${JSON.stringify(header)}`);
   } else pass(`${p.padEnd(32)} shared Marko header hydrated`);
 }

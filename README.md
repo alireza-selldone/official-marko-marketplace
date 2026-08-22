@@ -47,6 +47,7 @@ Useful commands:
 | `npm run check:pages -- <url>` | Route, footer, header, and policy checks |
 | `npm run check:controls -- <url>` | Dead-control sweep |
 | `npm run check:hero -- <url>` | Marketplace hero checks |
+| `npm run check:bento -- <url>` | Featured Departments retail-grid and image-safety checks |
 | `npm run check:port -- <url>` | Starter portability checks |
 | `npm run deploy` | Deploy `dist/` through Wrangler |
 
