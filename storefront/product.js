@@ -181,8 +181,8 @@ async function initPDP(cat) {
           <button class="sw${option.key === selectedColorKey ? " is-on" : ""}" type="button" role="radio"
                   aria-checked="${option.key === selectedColorKey ? "true" : "false"}"
                   data-color-key="${esc(option.key)}"
-                  style="${swatchStyle(option.color)}"
                   aria-label="Color ${i + 1} of ${colors.length}, ${esc(swatchLabel(option.color))}">
+            <span aria-hidden="true" style="${swatchStyle(option.color)}"></span>
           </button>`).join("")}
       </div>
       <p class="swname mb0">Color <span class="swhex" data-sw-hex>${esc(swatchLabel(selectedVariant?.color))}</span>${selectedVariant?.sku ? ` <span class="swsku" data-sw-sku>${esc(selectedVariant.sku)}</span>` : `<span class="swsku" data-sw-sku hidden></span>`}</p>
@@ -256,7 +256,7 @@ async function initPDP(cat) {
   if (rt) rt.textContent = others.length ? `More in ${c.name}` : "Explore the catalog";
   const rel = document.getElementById("related");
   const relatedProducts = (others.length ? others : cat.products.filter((x) => x.id !== p.id)).slice(0, 12);
-  if (rel) rel.innerHTML = relatedProducts.map(cardHTML).join("");
+  if (rel) rel.innerHTML = relatedProducts.map((product) => cardHTML(product)).join("");
 
   const relatedViewport = document.querySelector("[data-related-viewport]");
   const relatedControls = document.querySelector("[data-related-controls]");

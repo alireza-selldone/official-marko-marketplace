@@ -96,6 +96,39 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
 
 ## UI Rules
 
+- The storefront runs on ONE stylesheet, `storefront/styles.css`, organised as a
+  numbered design system: tokens -> reset -> type -> layout -> buttons -> product
+  card -> rails -> chrome -> overlays -> footer -> home modules -> page modules ->
+  target size. It replaced three stacked layers (a serif "Fashioni" base, a v2
+  refresh, and a `market-*` override block) that fought each other with roughly
+  200 `!important` declarations. Add a component in its numbered section and add
+  a token rather than a literal. The only `!important` rules left are `[hidden]`
+  and the reduced-motion block, and both carry a comment saying why.
+- Colour, spacing, radius, elevation and type are tokens. `--theme-*` is the
+  single recolour surface the theme picker and a cloned shop drive; neutrals
+  stay fixed so a jewelry or beauty clone changes hue only. Legacy token names
+  (`--graphite`, `--dial`, `--rule`, `--blued`, ...) are aliases into the system,
+  not a second palette.
+- `cardHTML(product, { compact, badge })` in `storefront/app.js` is the only
+  product card. Shop grid, homepage rails, savings panels, related strips and
+  seller pages all render it, so alignment cannot drift between modules. Reading
+  order is price -> name -> brand. Its badge is derived from live data only: a
+  real `clearance` tag passed by the caller, otherwise a discount the catalog
+  actually carries. Do not reintroduce a decorative "New in" flag.
+- A sale countdown renders only inside 7 days of the end date. Selldone discount
+  windows are routinely months long and "ends in 60d" on every card was noise.
+- Homepage modules remove themselves when they cannot be filled honestly.
+  `renderDeals` drops "Today's best prices" below four live discounts rather
+  than padding it with full-price stock; the same applies to the savings panels,
+  the promo grid and the department spotlight. A slow or unavailable catalog
+  must leave a navigable page, never a spinner: see `renderCatalogUnavailable`.
+- Hero slides declare an INTENT (`{audience}` or `{kind:"tech"}`), never a URL
+  with a product or category id in it. `resolveStoryHref()` turns that into a
+  route the live catalog can actually serve, falling back to `shop.html`.
+- Promotional cutouts must genuinely cut out. `removePromoImageBackground`
+  reports how much it cleared, and a tile whose photograph will not separate
+  from its backdrop swaps in the next ranked product from the same department.
+  Do not "fix" a failed cutout with a white card behind it — that is banned.
 - Dashboard UI should be English.
 - Rear-angle apparel photography is permanently banned from every promotional
   placement. Products may remain in ordinary listings and their PDP, but all
@@ -103,13 +136,18 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   `isPromotionSafeProduct()` / `promotionSafeProducts()` from
   `storefront/shop-data.js`. Prefer excluding a questionable product to
   resurfacing rear-angle imagery.
-- The homepage Featured Departments bento uses five live categories with at
+- The homepage Featured Departments promo grid uses five live categories with at
   least one technology tile when the catalog supplies one. Headlines and price
   claims come from live catalog data; eyebrows do not repeat; exactly one tile
   has a pill CTA. Tile backgrounds are flat solids and product cutouts have no
   rotation, white paper cards, decorative circles, gradients, or shadows.
   `npm run check:bento -- <url>` is the acceptance check and writes 1440px and
-  375px section screenshots to `artifacts/qa/`.
+  375px section screenshots to `artifacts/qa/`. Copy and product art occupy
+  separate grid tracks, so the 24px copy clearance is a property of the layout
+  rather than of hand-tuned offsets.
+- Every activatable target is at least 44x44 (WCAG 2.5.5). Section 15 of the
+  stylesheet holds those rules in one place. `.sdbar` and `.market-footer` are
+  held to the 2.5.8 AA floor of 24px instead, which the audit encodes.
 - Use Bootstrap-compatible markup and Bootstrap Icons where the dashboard already uses them.
 - Keep the visual direction modern, minimal, operational, and compact.
 - Do not duplicate account controls; the user account menu belongs in the left sidebar profile.
@@ -131,6 +169,27 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   `single-page-application` set, a missing page answers 200 with the homepage, so a broken link is
   invisible to a status-code check. Assert the response differs from the homepage as well.
   `dev-static.mjs` emulates Cloudflare's `html_handling` so this is testable locally.
+
+## QA Scripts
+
+The checks assert contracts, not one design's magic numbers. Four of them were
+pinned to the previous layout and were rewritten rather than deleted:
+
+- `herocheck` asserts the three slides share ONE stage height and are each at
+  least 1920x1080, instead of requiring a literal 620px.
+- `portcheck` derives the expected department-column count from the live
+  category count, and stubs `cdn.selldone.com` so a synthetic fixture's fake
+  image path cannot report a CDN 404 as a storefront page error.
+- `imgsweep` seeds the cart from whatever the homepage is showing. It used to
+  name two product ids from the shop this repo was built against; once the
+  catalog moved on it hung for 30s and aborted before measuring shop and
+  checkout. A panel that will not open now fails that step and continues.
+- `_audit.js` compares the body surface and ink against the resolved `--surface`
+  and `--ink` tokens rather than two hardcoded RGB triples, requires only the
+  faces actually shipped, and implements WCAG 2.5.5's inline-link exception.
+
+If a check fails because the design legitimately changed, generalise the
+assertion to the contract. Do not weaken it and do not delete it.
 
 ## Git And Editing Hygiene
 

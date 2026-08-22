@@ -98,8 +98,6 @@ const prime = async (p) => {
 
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
-await ctx.addInitScript((v) => localStorage.setItem("storefront_bag_v1", v),
-  JSON.stringify([{ id: 710152, qty: 1, variantId: 1401322 }, { id: 710265, qty: 2 }]));
 const p = await ctx.newPage();
 
 let checked = 0, failed = 0;
@@ -124,9 +122,40 @@ await p.goto(BASE + "/", { waitUntil: "domcontentloaded" });
 await p.waitForSelector("#catgrid .home-dept-card"); await prime(p);
 report("home", await p.evaluate(MEASURE));
 
+/* The cart drawer and the checkout summary only render rows when the bag holds
+   lines the live catalogue can still resolve. This used to be seeded with two
+   literal product ids from the shop this repo was originally built against;
+   once the catalogue moved on, `bagLines()` resolved nothing, the drawer showed
+   its empty state, and the sweep hung for 30s and aborted before reaching the
+   shop and checkout measurements. Seed from whatever the homepage is actually
+   showing instead, so the fixture cannot go stale again. */
+const seedIds = await p.evaluate(() =>
+  [...document.querySelectorAll("[data-card-product]")].slice(0, 2)
+    .map((card) => Number(card.dataset.cardProduct)));
+if (seedIds.length) {
+  await ctx.addInitScript((value) => localStorage.setItem("storefront_bag_v1", value),
+    JSON.stringify(seedIds.map((id, index) => ({ id, qty: index + 1 }))));
+} else {
+  console.log("  FAIL cart drawer                       no product available to seed the bag");
+  failed++;
+}
 await p.goto(BASE + "/?open=cart", { waitUntil: "domcontentloaded" });
-await p.waitForSelector(".cart.is-open .cart__row"); await p.waitForTimeout(1200);
-report("home + cart drawer", await p.evaluate(MEASURE));
+/* One panel that will not open must not abort the sweep: the shop and checkout
+   measurements after it are the reason this script exists. */
+const cartReady = await p.waitForSelector(".cart.is-open .cart__row", { timeout: 20000 })
+  .then(() => true).catch(() => false);
+if (!cartReady) {
+  failed++;
+  const why = await p.evaluate(() => ({
+    open: !!document.querySelector(".cart.is-open"),
+    bag: localStorage.getItem("storefront_bag_v1"),
+    body: (document.querySelector("[data-cart-body]")?.textContent || "").trim().slice(0, 80),
+  }));
+  console.log(`  FAIL home + cart drawer                cart rows never rendered ${JSON.stringify(why)}`);
+} else {
+  await p.waitForTimeout(1200);
+  report("home + cart drawer", await p.evaluate(MEASURE));
+}
 
 await p.goto(BASE + page_("/shop"), { waitUntil: "domcontentloaded" });
 await p.waitForSelector("#pgrid .pcard"); await prime(p);

@@ -34,9 +34,9 @@ Promise.all([loadCatalog(), loadVendors().catch(() => [])]).then(([catalog, live
   if (categoryGrid) categoryGrid.innerHTML = categories.map((category) => `<a href="shop.html?cat=${encodeURIComponent(category.slug)}"><span><img src="${esc(category.image)}" alt="" loading="lazy" width="300" height="300"></span><b>${esc(category.name)}</b></a>`).join("");
 
   const featured = document.querySelector("[data-vendor-products]");
-  if (featured) featured.innerHTML = products.slice(0, 12).map(cardHTML).join("");
+  if (featured) featured.innerHTML = products.slice(0, 12).map((product) => cardHTML(product)).join("");
   const more = document.querySelector("[data-vendor-more]");
-  if (more) more.innerHTML = products.slice(12, 24).map(cardHTML).join("");
+  if (more) more.innerHTML = products.slice(12, 24).map((product) => cardHTML(product)).join("");
 }).catch((error) => {
   console.error(error);
   document.querySelector("[data-vendor-description]").textContent = "This seller could not be loaded. Please try again shortly.";

@@ -19,10 +19,17 @@ function saleEndOf(p) {
   return Number.isFinite(timestamp) && timestamp > Date.now() ? { end, timestamp } : null;
 }
 
+/* A countdown is an urgency signal, so it only earns space while the deadline
+   is actually near. Selldone discount windows are routinely months long, and
+   rendering "ends in 60d" on every discounted card turned the grid into noise
+   and said nothing true about urgency. */
+const SALE_URGENCY_WINDOW = 7 * 24 * 60 * 60 * 1000;
+
 export function saleBadgeHTML(p, context = "card") {
   const sale = saleEndOf(p);
   const active = p?.was || (Number(p?.discount) > 0 && (!p?.dis_start || Date.now() >= Date.parse(p.dis_start)));
   if (!active || !sale) return "";
+  if (sale.timestamp - Date.now() > SALE_URGENCY_WINDOW) return "";
   return `<span class="sale-countdown sale-countdown--${context}" data-sale-end="${esc(sale.end)}" role="status" aria-label="Timed sale ends at ${esc(sale.end)}">
     <b>Ends in</b><span data-sale-timer>--:--:--</span>
   </span>`;
@@ -106,24 +113,43 @@ function initSharedChrome() {
   }
 }
 
-/* ---------- Shared card ---------- */
-export function cardHTML(p) {
+/* ---------- Shared card ----------
+   One card for every surface: shop grid, homepage rails, savings panels,
+   related strips and seller pages. A module that needs a denser card passes
+   `compact` rather than forking the markup, which is what previously let the
+   homepage and the shop drift into two different cards.
+
+   Reading order is price → name → brand, because that is the order a shopper
+   scans a retail grid in. The badge is derived from live data only: a real
+   `clearance` tag supplied by the caller, otherwise a discount the catalog
+   actually carries. There is no decorative "New in" flag. */
+const savingsBadge = (p) => {
+  if (!(Number(p.was) > Number(p.price))) return "";
+  const percent = Math.round(((p.was - p.price) / p.was) * 100);
+  return percent >= 5 ? `Save ${percent}%` : "";
+};
+
+export function cardHTML(p, { compact = false, badge = "" } = {}) {
   const saleBadge = saleBadgeHTML(p);
-  const colors = [...new Set(p.colors || [])].slice(0, 6).map((color) => {
+  const flag = badge || savingsBadge(p);
+  const colors = compact ? [] : [...new Set(p.colors || [])].slice(0, 6).map((color) => {
     const variants = (p.variants || []).filter((variant) => String(variant.color).toUpperCase() === String(color).toUpperCase());
     const imageVariant = variants.find((variant) => variant.image) || variants[0];
     return { color, variantId: imageVariant?.id || "", image: imageVariant?.image ? img(imageVariant.image) : p.image };
   });
-  return `<article class="pcard${saleBadge ? " has-timed-sale" : ""}" data-card-product="${p.id}">
+  const priceNow = p.range?.varies
+    ? `<span class="price__from">from</span> ${money(p.range.from)}`
+    : money(p.price);
+  return `<article class="pcard${compact ? " pcard--compact" : ""}${saleBadge ? " has-timed-sale" : ""}" data-card-product="${p.id}">
     <a class="pcard__link" href="product.html?id=${p.id}">
       <div class="pcard__art">
-        <span class="pcard__badge">${p.raw?.created_at ? "New in" : "Marko"}</span>
+        ${flag ? `<span class="pcard__badge">${esc(flag)}</span>` : ""}
         ${saleBadge}
         <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" width="500" height="500" data-card-image>
       </div>
-      <p class="pcard__meta">${esc(p.brand || p.catName)}</p>
+      <p class="price mb0 pcard__price"><span class="price__now">${priceNow}</span>${p.was ? `<s>${money(p.was)}</s>` : ""}</p>
       <span class="pcard__name">${esc(p.name)}</span>
-      <p class="price mb0 pcard__price">${p.was ? `<s>${money(p.was)}</s>` : ""}<span class="price__now">${p.range?.varies ? `<span class="price__from">from</span> ${money(p.range.from)}` : money(p.price)}</span></p>
+      <p class="pcard__meta">${esc(p.brand || p.catName)}</p>
     </a>
     ${colors.length ? `<span class="pcard__swatches" role="radiogroup" aria-label="Choose a color for ${esc(p.name)}">${colors.map((option, index) => `<button class="pcard__swatch${index ? "" : " is-on"}" type="button" role="radio" aria-checked="${index ? "false" : "true"}" aria-label="${esc(swatchLabel(option.color))}" data-card-color="${esc(String(option.color))}" data-card-variant="${option.variantId}" data-card-image-src="${esc(option.image)}"><span aria-hidden="true" style="${swatchStyle(option.color)}"></span></button>`).join("")}</span>` : ""}
   </article>`;
@@ -580,13 +606,15 @@ function fillNav() {
   document.querySelectorAll("[data-collections]").forEach((container) => {
     const audiences = (CAT.audiences || []).filter((item) =>
       ["women", "men", "girls", "boys", "baby"].includes(item.slug));
+    /* Departments come from the live catalogue. The previous list named this
+       shop's own slugs, so a clone selling jewelry inherited a footer of links
+       to categories it does not have. */
+    const departments = (CAT.cats || [])
+      .slice(0, 6)
+      .map((item) => ({ href: `shop.html?cat=${encodeURIComponent(item.slug)}`, label: item.name }));
     const links = [
       ...audiences.map((item) => ({ href: `shop.html?audience=${item.slug}`, label: item.title })),
-      { href: "shop.html?cats=activewear%2Cfootwear%2Cdresses-and-one-pieces%2Ctops-and-t-shirts%2Csunglasses%2Cbags-and-accessories%2Cshorts%2Cjackets-and-layers&label=Fashion", label: "Fashion" },
-      { href: "shop.html?cats=laptop%2Cmonitors%2Ctvs%2Cheadphones%2Cearbuds&label=Electronics", label: "Electronics" },
-      { href: "shop.html?cat=activewear", label: "Activewear" },
-      { href: "shop.html?cat=footwear", label: "Footwear" },
-      { href: "shop.html?cat=bags-and-accessories", label: "Bags & accessories" },
+      ...departments,
       { href: "shop.html", label: "View all products" },
     ];
     const midpoint = Math.ceil(links.length / 2);

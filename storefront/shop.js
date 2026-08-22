@@ -28,17 +28,27 @@ function initShop(cat) {
   let shown = PAGE;
   if (!grid) return;
 
-  /* Next-style catalogue rhythm: title first, then a full-width filter bar. */
+  /* Catalogue rhythm: title first, then a full-width filter bar. Each group's
+     controls are collected into one `.fgroup__panel` so a group is a single
+     box to open — the price group alone has four sibling controls, and without
+     a wrapper each one had to be positioned individually in CSS. */
   document.querySelector(".listhd")?.after(filters);
-  filters.querySelectorAll(".fgroup h4").forEach((heading) => {
+  filters.querySelectorAll(".fgroup").forEach((group) => {
+    const heading = group.querySelector("h4");
+    if (!heading) return;
     const trigger = document.createElement("button");
     trigger.type = "button";
     trigger.className = "filter-trigger";
-    trigger.innerHTML = `<span>${heading.textContent}</span><span aria-hidden="true">⌄</span>`;
+    trigger.innerHTML = `<span>${heading.textContent}</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
     trigger.setAttribute("aria-expanded", "false");
     heading.replaceWith(trigger);
+
+    const panel = document.createElement("div");
+    panel.className = "fgroup__panel";
+    while (trigger.nextSibling) panel.appendChild(trigger.nextSibling);
+    group.appendChild(panel);
+
     trigger.addEventListener("click", () => {
-      const group = trigger.closest(".fgroup");
       filters.querySelectorAll(".fgroup.is-open").forEach((open) => {
         if (open !== group) {
           open.classList.remove("is-open");
@@ -47,6 +57,15 @@ function initShop(cat) {
       });
       const expanded = group.classList.toggle("is-open");
       trigger.setAttribute("aria-expanded", String(expanded));
+    });
+  });
+  /* Clicking away closes an open group, which a dropdown bar needs and an
+     always-open sidebar never did. */
+  document.addEventListener("click", (event) => {
+    if (event.target.closest(".fgroup") || !filters.querySelector(".fgroup.is-open")) return;
+    filters.querySelectorAll(".fgroup.is-open").forEach((open) => {
+      open.classList.remove("is-open");
+      open.querySelector(".filter-trigger")?.setAttribute("aria-expanded", "false");
     });
   });
 
@@ -191,7 +210,7 @@ function initShop(cat) {
     if (list.length) {
       const page = list.slice(0, shown);
       grid.className = "pgrid";
-      grid.innerHTML = page.map(cardHTML).join("");
+      grid.innerHTML = page.map((product) => cardHTML(product)).join("");
       more.hidden = page.length >= list.length;
       if (!more.hidden) {
         moreBtn.textContent = "Load more";
@@ -207,7 +226,7 @@ function initShop(cat) {
       grid.innerHTML = `<div class="empty">
         <p class="h3" style="margin-bottom:8px">Nothing in this range</p>
         <p class="cap" style="margin-bottom:28px">Widen the price band or clear a filter. These sit closest to what you asked for.</p>
-        <div class="pgrid" style="text-align:left">${near.map(cardHTML).join("")}</div>
+        <div class="pgrid" style="text-align:left">${near.map((product) => cardHTML(product)).join("")}</div>
       </div>`;
     }
   }

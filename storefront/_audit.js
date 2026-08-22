@@ -80,6 +80,15 @@ export function audit() {
       const lr = lab.getBoundingClientRect();
       if (lr.height >= 44 && lr.width >= 44) return false;
     }
+    /* WCAG 2.5.5 exempts an "inline" target: a link inside a sentence, whose
+       height is set by the line-height of the prose around it. Enlarging those
+       would break the paragraph, and the success criterion does not ask for it.
+       A link that is the only content of its paragraph is NOT inline and is
+       still measured. */
+    if (el.tagName === 'A') {
+      const line = el.parentElement?.closest('p,li,td,blockquote,figcaption');
+      if (line && line.textContent.trim().length > el.textContent.trim().length) return false;
+    }
     const r = el.getBoundingClientRect();
     /* The platform-credit bar is capped under 40px by design, so a link inside
        it can never reach 44. It is held to the WCAG 2.5.8 AA minimum (24x24)
@@ -110,11 +119,26 @@ export function audit() {
   const noAlt = imgs.filter((i) => i.getAttribute('alt') === null).map((i) => (i.currentSrc || i.src).slice(-40));
   if (noAlt.length) add('image-missing-alt', noAlt.slice(0, 8));
 
-  /* 4. palette */
+  /* 4. palette
+     The page must take its base surface and ink from the design tokens rather
+     than from a literal, so a retheme or a clone cannot leave the body painted
+     a colour the system does not know about. Comparing against the resolved
+     token values catches exactly that, and unlike the previous hardcoded pair
+     of RGB triples it does not have to be edited every time the palette moves. */
+  const resolve = (token) => {
+    const probe = document.createElement('span');
+    probe.style.cssText = `display:none;color:var(${token})`;
+    document.body.appendChild(probe);
+    const value = getComputedStyle(probe).color;
+    probe.remove();
+    return value;
+  };
   const bodyBg = getComputedStyle(document.body).backgroundColor;
   const bodyFg = getComputedStyle(document.body).color;
-  if (bodyBg !== 'rgb(244, 247, 251)') add('body-background-not-fashioni-surface', bodyBg);
-  if (bodyFg !== 'rgb(16, 24, 40)') add('body-ink-not-fashioni-graphite', bodyFg);
+  const tokenSurface = resolve('--surface');
+  const tokenInk = resolve('--ink');
+  if (bodyBg !== tokenSurface) add('body-background-off-token', { bodyBg, expected: tokenSurface });
+  if (bodyFg !== tokenInk) add('body-ink-off-token', { bodyFg, expected: tokenInk });
 
   /* 5. Card elevation is intentional in the Marko retail system. */
 
@@ -125,10 +149,10 @@ export function audit() {
      Require a registered face that actually reached "loaded". */
   const loaded = (family) =>
     [...document.fonts].some((f) => f.family === family && f.status === 'loaded');
-  const fonts = {
-    archivo: loaded('Archivo'),
-    cormorant: loaded('Cormorant Garamond'),
-  };
+  /* Archivo is the whole type system now. The Cormorant display face belonged
+     to the previous serif direction and is no longer referenced or shipped, so
+     requiring it here only ever reported the absence of a deleted asset. */
+  const fonts = { archivo: loaded('Archivo') };
   Object.entries(fonts).forEach(([k, v]) => { if (!v) add('font-not-loaded', k); });
 
   /* 7. network + api.selldone.com */

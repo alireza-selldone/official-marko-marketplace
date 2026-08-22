@@ -73,6 +73,17 @@ async function run(browser, { nCats, nProducts = 40, cfg = null, label }) {
   await ctx.route(/xapi\.selldone\.com\/.*\/(info|blogs)/, (r) =>
     r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ shop: {}, articles: [] }) }));
 
+  /* The synthetic catalogue names an image path that only exists in this
+     fixture, so the real CDN answers 404 and the run reports a page error that
+     says nothing about the storefront. Serve the placeholder locally: the
+     assertion is about this code, not about cdn.selldone.com's contents. */
+  const PIXEL = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+    "base64",
+  );
+  await ctx.route(/cdn\.selldone\.com\/.*/, (r) =>
+    r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+
   if (cfg) {
     await ctx.route(/shop\.config\.json/, (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(cfg) }));
@@ -120,7 +131,12 @@ const browser = await chromium.launch();
 
 console.log("\nA DIFFERENT SHOP — none of this repo's category ids appear in the data");
 console.log("-".repeat(66));
-for (const [nCats, wantCols] of [[3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6], [10, 6]]) {
+/* The department row is capped at eight tiles and its column track follows the
+   live count, so a small catalog gets full-width tiles rather than narrow ones
+   padded out by empty columns. Expected columns are therefore derived, not a
+   literal: pinning one number only ever measured one layout. */
+for (const nCats of [3, 4, 5, 6, 7, 8, 9, 10]) {
+  const wantCols = Math.min(nCats, 8);
   const r = await run(browser, { nCats, cfg: REAL_CFG, label: `${nCats} categories` });
   const expectedTiles = Math.min(nCats, 8);
   const ok = r.tiles === expectedTiles && r.cols === wantCols && !r.hidden;

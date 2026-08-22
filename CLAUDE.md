@@ -8,9 +8,10 @@ architecture, API, security, deployment, and UI contract for this repository.
 - GitHub branch: `codex/marko-marketplace`
 - Production: `https://marko.selldone.shop`
 - Local source: `storefront/`; generated deployment output: `dist/`
-- The user does **not** consider the current visual design final. Treat it as a
-  functional baseline whose data, commerce, and safety behavior must survive a
-  stronger redesign.
+- Branch `claude/marketplace-redesign` carries the storefront redesign: one
+  coherent design system in `storefront/styles.css` replacing the three stacked
+  CSS layers, a rebuilt homepage, and one shared product card. Read the
+  "UI Rules" and "QA Scripts" sections of `AGENT.md` before touching either.
 
 ## Non-negotiable behavior
 
@@ -39,6 +40,9 @@ architecture, API, security, deployment, and UI contract for this repository.
    - `npm run check:hero -- <local-url>`
    - `npm run check:bento -- <local-url>`
    - `npm run check:leak`
+   `npm run check` runs the full suite and is currently green end to end. A
+   check that fails because the design legitimately moved should have its
+   assertion generalised to the contract, never weakened or deleted.
 5. Inspect desktop and mobile screenshots visually. One rear-angle promotional
    image is a failed handoff.
 

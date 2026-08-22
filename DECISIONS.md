@@ -22,6 +22,37 @@ Product-type categories remain the canonical main categories. Women, Men, Girls,
 
 `All Products`, `Departments`, `Sellers`, and the retired `Shop by Product` label are presentation concepts only. They must never be created as Selldone categories. Taxonomy writes must reject self-parenting, cycles, duplicate wrappers, and missing parents before mutation and verify the live hierarchy afterwards.
 
+## Design system
+
+The storefront runs on one stylesheet organised as a numbered design system.
+It replaced three stacked layers — a serif "Fashioni" base, a v2 refresh that
+redefined the tokens, and a `market-*` block that overrode both with roughly
+200 `!important` declarations — in which `.market-hero` alone was defined three
+times. About 30% of the selectors were dead. The rewrite is 1,596 lines against
+2,434, with `!important` reduced to two documented rules.
+
+Identity is a deep marine blue with a coral accent, chosen to be legible as
+Marko rather than as a recolour of a large US general retailer: no cyan-and-
+yellow pairing, a navy chrome rather than a bright blue one, and reversed type
+on a deepened accent so badges clear AA.
+
+Neutrals, spacing, radius, elevation and type are fixed; `--theme-*` is the one
+recolour surface, so a jewelry, beauty or home clone changes hue and keeps the
+system. Legacy token names remain as aliases so older page modules resolve into
+the same palette instead of maintaining a second one.
+
+One product card serves every surface. The homepage previously carried its own
+`home-merch-card`, which is how its cards and the shop grid drifted apart.
+
+Promotional imagery is one deliberate subject per tile, standing on the tile's
+baseline, with a considered pair on the tall tile — not a scatter of cutouts.
+Where a photograph will not separate from its backdrop the tile swaps in
+another product from the same department rather than placing a white card
+behind it.
+
+Modules delete themselves rather than make a claim the catalog does not
+support: "Today's best prices" needs four live discounts to exist at all.
+
 ## Design direction
 
 The storefront uses an original Marko retail system: blue search-first header, compact department navigation, soft campaign fields, dense product rails, and seller-specific accent colors. Walmart was reviewed for marketplace information patterns such as search prominence, pickup/delivery utility, broad departments, merchandising rails, and dedicated seller destinations. No Walmart source code, logo, proprietary icon, copy, or media is reused.

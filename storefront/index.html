@@ -25,6 +25,7 @@
     <meta content="https://xapi.selldone.com" name="selldone-xapi" />
     <meta content="https://cdn.selldone.com/app" name="selldone-cdn-images" />
     <link rel="preconnect" href="https://cdn.selldone.com" />
+    <link rel="preload" as="image" href="assets/hero/marko-mens-performance-hd-v4.webp" fetchpriority="high" />
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="app.js"></script>
     <script type="module" src="home.js"></script>
@@ -34,18 +35,32 @@
     <div class="page fashioni-page">
       <header class="hdr" data-shared-chrome="v2"></header>
       <main id="main" tabindex="-1">
-        <section class="market-hero" data-market-hero data-story="market">
-          <div class="market-hero__art" data-market-hero-art aria-live="polite"><div class="market-hero__scene"><img src="assets/hero/marko-mens-performance-hd-v4.webp" alt="Male athlete training in a premium modern gym" width="1920" height="1080" fetchpriority="high"></div></div>
+
+        <!-- Hero: three slides on one fixed stage. Copy sits on a solid brand
+             field so legibility never depends on the photograph behind it. -->
+        <section class="market-hero" data-market-hero data-story="performance">
+          <div class="market-hero__art" data-market-hero-art aria-live="polite">
+            <div class="market-hero__scene"><img src="assets/hero/marko-mens-performance-hd-v4.webp" alt="Athlete training in a modern gym" width="1920" height="1080" fetchpriority="high"></div>
+          </div>
           <div class="wrap market-hero__grid">
             <div class="market-hero__copy">
               <p data-hero-kicker>Men's performance</p>
               <h1 data-hero-title><span>Built for the</span><span>work. Ready</span><span>for the day.</span></h1>
               <span data-hero-lede>Performance essentials selected for movement, focus, and every plan after training.</span>
-              <div><a class="market-button" data-hero-link href="shop.html?audience=men">Shop men's performance</a><a class="market-button market-button--ghost" href="#departments">Explore departments</a></div>
+              <div>
+                <a class="market-button" data-hero-link href="shop.html?audience=men">Shop men's performance</a>
+                <a class="market-button market-button--ghost" href="#departments">Browse departments</a>
+              </div>
               <small>Secure checkout by Selldone</small>
             </div>
+            <div class="market-hero__controls">
+              <div class="market-hero__dots" data-market-hero-dots aria-label="Marketplace stories"></div>
+              <div class="market-hero__nav">
+                <button type="button" data-hero-prev aria-label="Previous story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+                <button type="button" data-hero-next aria-label="Next story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+              </div>
+            </div>
           </div>
-          <div class="market-hero__dots" data-market-hero-dots aria-label="Marketplace stories"></div>
         </section>
 
         <section class="market-perks" aria-label="Shopping benefits"><div class="wrap">
@@ -57,29 +72,38 @@
 
         <p class="wrap cap home-catalog-message" data-catalog-error hidden></p>
 
-        <section class="home-module home-brand-module" aria-labelledby="home-brands-title"><div class="wrap">
+        <!-- Departments first: on a marketplace, navigation outranks merchandising. -->
+        <section class="home-module" id="departments" aria-labelledby="home-departments-title"><div class="wrap">
+          <div class="home-module__head"><div><p>Explore the marketplace</p><h2 id="home-departments-title">Shop by department</h2></div><a href="shop.html">View all</a></div>
+          <div class="home-department-row" id="catgrid" data-home-departments aria-live="polite"><span class="home-module__loading">Loading departments…</span></div>
+        </div></section>
+
+        <section class="home-module home-module--soft" aria-labelledby="home-deals-title"><div class="wrap">
+          <div class="home-module__head"><div><p>Live price drops</p><h2 id="home-deals-title">Today's best prices</h2></div><a href="shop.html?sort=discount">View all</a></div>
+          <div class="home-product-row" data-home-deals aria-live="polite"><span class="home-module__loading">Loading live products…</span></div>
+        </div></section>
+
+        <section class="home-module" id="featured-departments" aria-labelledby="home-mosaic-title"><div class="wrap">
+          <div class="home-module__head"><div><p>Ways to shop</p><h2 id="home-mosaic-title">More to discover</h2></div><a href="shop.html">View all</a></div>
+          <div class="home-promo-mosaic" data-home-mosaic aria-live="polite"><span class="home-module__loading">Preparing collections…</span></div>
+        </div></section>
+
+        <section class="home-module home-lineup-module home-module--soft" aria-labelledby="home-lineup-title"><div class="wrap">
+          <div class="home-lineup__products">
+            <div class="home-module__head"><div><p data-home-lineup-kicker>Featured department</p><h2 id="home-lineup-title" data-home-lineup-title>The dream lineup</h2></div><a href="shop.html" data-home-lineup-link>View all</a></div>
+            <div class="home-lineup__grid" data-home-lineup-products><span class="home-module__loading">Selecting products…</span></div>
+          </div>
+          <article class="home-lineup__feature" data-home-lineup-feature></article>
+        </div></section>
+
+        <section class="home-module" aria-labelledby="home-brands-title"><div class="wrap">
           <div class="home-module__head"><div><p>Brands worth browsing</p><h2 id="home-brands-title">Discover great brands</h2></div><a href="brands.html">Shop all</a></div>
           <div class="home-product-row" data-home-brand-products aria-live="polite"><span class="home-module__loading">Loading live products…</span></div>
         </div></section>
 
-        <section class="home-module home-savings-module" aria-labelledby="home-savings-title"><div class="wrap">
-          <div class="home-module__head"><div><p>Current offers</p><h2 id="home-savings-title">Savings &amp; more</h2></div><a href="shop.html">View all</a></div>
-          <div class="home-savings-groups" data-home-savings-groups aria-live="polite"><span class="home-module__loading">Building today’s offers…</span></div>
-        </div></section>
-
-        <section class="home-module home-lineup-module" aria-labelledby="home-lineup-title"><div class="wrap">
-          <div class="home-lineup__products"><div class="home-module__head"><div><p data-home-lineup-kicker>Featured department</p><h2 id="home-lineup-title" data-home-lineup-title>The dream lineup</h2></div><a href="shop.html" data-home-lineup-link>View all</a></div><div class="home-lineup__grid" data-home-lineup-products><span class="home-module__loading">Selecting products…</span></div></div>
-          <article class="home-lineup__feature" data-home-lineup-feature></article>
-        </div></section>
-
-        <section class="home-module home-departments-module" id="departments" aria-labelledby="home-departments-title"><div class="wrap">
-          <div class="home-module__head"><div><p>Explore the marketplace</p><h2 id="home-departments-title">Get it all right here</h2></div><a href="shop.html">View all</a></div>
-          <div class="home-department-row" id="catgrid" data-home-departments aria-live="polite"><span class="home-module__loading">Loading departments…</span></div>
-        </div></section>
-
-        <section class="home-module home-mosaic-module" id="featured-departments" aria-labelledby="home-mosaic-title"><div class="wrap">
-          <div class="home-module__head home-module__head--sr"><h2 id="home-mosaic-title">More ways to shop</h2></div>
-          <div class="home-promo-mosaic" data-home-mosaic aria-live="polite"><span class="home-module__loading">Preparing collections…</span></div>
+        <section class="home-module home-module--soft" aria-labelledby="home-savings-title"><div class="wrap">
+          <div class="home-module__head"><div><p>Current offers</p><h2 id="home-savings-title">Savings by department</h2></div><a href="shop.html">View all</a></div>
+          <div class="home-savings-groups" data-home-savings-groups aria-live="polite"><span class="home-module__loading">Building today's offers…</span></div>
         </div></section>
 
         <section class="market-join"><div class="wrap"><div><p>Built for everyday shopping</p><h2>One cart. Everything you need.</h2></div><a class="market-button" href="shop.html">Start shopping</a></div></section>
