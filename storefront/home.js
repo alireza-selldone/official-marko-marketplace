@@ -17,6 +17,7 @@ const HERO_STORIES = [
     label: "Shop men's performance", intent: { audience: "men" },
     background: "assets/hero/marko-mens-performance-hd-v4.webp",
     backgroundAlt: "Athlete training in a modern gym",
+    focus: "64% 14%", focusMobile: "60% 16%",
   },
   {
     id: "home-cinema", kicker: "Premium home cinema",
@@ -25,6 +26,7 @@ const HERO_STORIES = [
     label: "Shop home cinema", intent: { kind: "tech", label: "Home cinema" },
     background: "assets/hero/marko-premium-tv-hd-v4.webp",
     backgroundAlt: "Television in a modern living room",
+    focus: "58% 44%", focusMobile: "56% 42%",
   },
   {
     id: "kids-play", kicker: "Kids' everyday",
@@ -33,6 +35,7 @@ const HERO_STORIES = [
     label: "Shop kids", intent: { audience: "kids" },
     background: "assets/hero/marko-kids-play-hd-v4.webp",
     backgroundAlt: "Children playing together in a bright playroom",
+    focus: "56% 20%", focusMobile: "54% 22%",
   },
 ];
 
@@ -77,7 +80,7 @@ function renderHero() {
     const link = root.querySelector("[data-hero-link]");
     link.textContent = story.label;
     link.href = resolveStoryHref(story, catalog);
-    art.innerHTML = `<div class="market-hero__scene"><img src="${esc(story.background)}" alt="${esc(story.backgroundAlt)}" width="1920" height="1080" loading="eager" fetchpriority="high"></div>`;
+    art.innerHTML = `<div class="market-hero__scene" style="--hero-focus:${esc(story.focus || "50% 50%")};--hero-focus-mobile:${esc(story.focusMobile || story.focus || "50% 40%")}"><img src="${esc(story.background)}" alt="${esc(story.backgroundAlt)}" width="1920" height="1080" loading="eager" fetchpriority="high"></div>`;
     dots.querySelectorAll("button").forEach((button, dotIndex) => button.setAttribute("aria-current", String(dotIndex === active)));
     root.dataset.story = story.id;
     if (restart) {

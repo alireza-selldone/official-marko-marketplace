@@ -133,6 +133,15 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
 - A panel that is only translated off screen is still painted and still in the
   tab order. `.drawer`, `.cart` and `.sheet` carry `visibility:hidden` when
   closed, with the transition delayed so the slide-out still animates.
+- The PDP size table is an inline accordion directly above Specifications, not
+  a modal: it is reference material, and as a `<dialog>` it had to be dismissed
+  before the sizes it describes could be used. Two lessons worth keeping — an
+  author `display` rule on a `<dialog>` defeats the UA's
+  `dialog:not([open]){display:none}` whatever the specificity, because author
+  styles outrank UA styles; and a size guide is content, not a decision.
+- Hero slides carry their own `focus` / `focusMobile`, applied as
+  `--hero-focus`. A 16:9 asset on a 2.7:1 stage loses a third of its height,
+  and a centred crop took the top off the subject's head.
 - Dashboard UI should be English.
 - Rear-angle apparel photography is permanently banned from every promotional
   placement. Products may remain in ordinary listings and their PDP, but all

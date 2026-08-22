@@ -213,6 +213,15 @@ async function initPDP(cat) {
             <p class="cap mb0">Category description. Selldone holds no separate long description for this product.</p>
           </div>
         </div>
+        ${sizeValues.length ? `
+        <div class="acc" id="size-guide">
+          <button class="acc__hd" type="button" aria-expanded="false">Size guide <span class="acc__ico">+</span></button>
+          <div class="acc__bd">
+            <p class="mt0">Use this table as a general guide. Measurements can vary by style; the selectable sizes above are the current live options for this product.</p>
+            ${sizeGuideHTML(p, c, sizeValues)}
+            <p class="cap mb0"><strong>How to measure:</strong> keep the tape level and close to the body without pulling it tight. For footwear, measure from the back of the heel to the longest toe.</p>
+          </div>
+        </div>` : ""}
         <div class="acc">
           <button class="acc__hd" type="button" aria-expanded="false">Specifications <span class="acc__ico">+</span></button>
           <div class="acc__bd">
@@ -226,26 +235,14 @@ async function initPDP(cat) {
           <button class="acc__hd" type="button" aria-expanded="false">Shipping &amp; returns <span class="acc__ico">+</span></button>
           <div class="acc__bd"><p class="mt0 mb0">Current delivery options and charges appear at checkout. Return eligibility follows the merchant policy shown for the order; no unverified return window is promised here.</p></div>
         </div>
-        <div class="acc" id="size-guide" style="border-bottom:1px solid var(--rule)">
-          <button class="acc__hd" type="button" aria-expanded="false">Fit, size &amp; care <span class="acc__ico">+</span></button>
+        <div class="acc">
+          <button class="acc__hd" type="button" aria-expanded="false">Fit &amp; care <span class="acc__ico">+</span></button>
           <div class="acc__bd"><p class="mt0 mb0">Choose only from the live size options above. Product-specific fit, material, and care details appear in Specifications when supplied by the merchant; missing facts are intentionally left unstated.</p></div>
         </div>
       </div>
     </div>
   </div>
-  ${sizeValues.length ? `<dialog class="size-guide-sheet" data-size-guide-dialog aria-labelledby="size-guide-title">
-    <div class="size-guide-sheet__panel">
-      <header class="size-guide-sheet__head">
-        <div><p class="eyebrow mb0">General reference</p><h2 id="size-guide-title">Size guide</h2></div>
-        <button class="size-guide-sheet__close" type="button" data-close-size-guide aria-label="Close size guide">×</button>
-      </header>
-      <div class="size-guide-sheet__body">
-        <p class="size-guide-sheet__intro">Use this table as a general guide. Measurements can vary by style; the selectable sizes on this page are the current live options for this product.</p>
-        ${sizeGuideHTML(p, c, sizeValues)}
-        <p class="size-guide-sheet__tip"><strong>How to measure:</strong> keep the tape level and close to the body without pulling it tight. For footwear, measure from the back of the heel to the longest toe.</p>
-      </div>
-    </div>
-  </dialog>` : ""}`;
+`;
 
   /* Reviews */
   const rev = document.getElementById("reviews");
@@ -356,11 +353,22 @@ async function initPDP(cat) {
   }));
   if (selectedVariant) selectVariant(selectedVariant);
 
-  const sizeGuide = root.querySelector("[data-size-guide-dialog]");
-  root.querySelector("[data-open-size-guide]")?.addEventListener("click", () => sizeGuide?.showModal());
-  root.querySelector("[data-close-size-guide]")?.addEventListener("click", () => sizeGuide?.close());
-  sizeGuide?.addEventListener("click", (event) => {
-    if (event.target === sizeGuide) sizeGuide.close();
+  /* The size table is reference material, not a decision that has to block the
+     page, so it opens in place in the accordion above Specifications. As a
+     modal it also had to be dismissed before the sizes it describes could be
+     used, which is the wrong way round. */
+  root.querySelector("[data-open-size-guide]")?.addEventListener("click", () => {
+    const panel = root.querySelector("#size-guide");
+    if (!panel) return;
+    const head = panel.querySelector(".acc__hd");
+    if (!panel.classList.contains("is-open")) {
+      panel.classList.add("is-open");
+      head?.setAttribute("aria-expanded", "true");
+      const icon = head?.querySelector(".acc__ico");
+      if (icon) icon.textContent = "–";
+    }
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+    head?.focus({ preventScroll: true });
   });
 
   initAcc(root);

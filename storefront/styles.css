@@ -759,7 +759,14 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 .market-hero__art{position:absolute;z-index:0;inset:0;}
 .market-hero__scene{position:absolute;inset:0;overflow:hidden;background:var(--theme-ink);}
-.market-hero__scene img{width:100%;height:100%;object-fit:cover;object-position:70% center;}
+/* Each slide sets its own focal point. A 16:9 asset in a 2.7:1 stage loses a
+   third of its height, and centring that crop took the top off the subject's
+   head; the excess should come off the floor instead. `--hero-focus` is set
+   per story from the slide data. */
+.market-hero__scene img{
+  width:100%;height:100%;object-fit:cover;
+  object-position:var(--hero-focus,50% 50%);
+}
 .market-hero__scene::after{
   content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(
@@ -820,7 +827,7 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 @media (max-width:860px){
   .market-hero{--hero-h:560px;}
   .market-hero__copy{width:100%;}
-  .market-hero__scene img{object-position:62% center;}
+  .market-hero__scene img{object-position:var(--hero-focus-mobile,var(--hero-focus,50% 40%));}
   .market-hero__scene::after{
     background:linear-gradient(
       180deg,
@@ -1261,13 +1268,17 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 .sizeopt:hover{border-color:var(--theme-primary);color:var(--theme-primary);}
 .sizeopt.is-on{background:var(--ink);border-color:var(--ink);color:#fff;}
-.size-guide-sheet{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:var(--s5);background:rgba(8,17,35,.55);}
-.size-guide-sheet[hidden]{display:none;}
-.size-guide-sheet__panel{width:min(560px,94vw);max-height:84vh;overflow:auto;padding:var(--s6);border-radius:var(--r-lg);background:var(--surface);}
-.size-guide-sheet__head{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);margin-bottom:var(--s4);}
-.size-guide-sheet__intro,.size-guide-sheet__tip{color:var(--ink-3);font-size:var(--t-md);}
+/* The size table lives in the accordion above Specifications. It used to be a
+   native <dialog>, and a `display:grid` rule on the element defeated the UA's
+   `dialog:not([open]){display:none}` — author styles beat UA styles whatever
+   the specificity — so it rendered permanently open and `close()` did nothing
+   visible. It is inline content now, which is also the right shape for it. */
 .size-guide-table{width:100%;border-collapse:collapse;margin:var(--s4) 0;font-size:var(--t-md);}
-.size-guide-table th,.size-guide-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;}
+.size-guide-table th,.size-guide-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;}
+.size-guide-table thead th{
+  font-size:var(--t-xs);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+}
+.size-guide-table tbody th{font-weight:700;}
 .stock{display:flex;align-items:center;gap:8px;margin-top:var(--s5);font-size:var(--t-md);color:var(--ink-2);}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--savings);}
 .purchase-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s5);}
@@ -1639,8 +1650,6 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
 .sw.is-on>span{box-shadow:0 0 0 2px var(--ink);}
 .sw:hover>span{box-shadow:0 0 0 2px var(--theme-primary);}
 
-.size-guide-sheet__close{display:grid;place-items:center;width:var(--tap);height:var(--tap);border-radius:50%;}
-.size-guide-sheet__close:hover{background:var(--surface-2);}
 
 /* The footer department column is filled from the live catalogue. When the
    catalogue is unavailable the column would otherwise render a heading over
