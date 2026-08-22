@@ -2,6 +2,17 @@
 
 This project is a fully static Selldone storefront plus browser-side dashboard. Follow these rules when editing it.
 
+## Marko Marketplace Contract
+
+- The connected shop is Marko (`15596`, `marko-5vMFPy7t`), not the Fashioni source shop.
+- Alio (`6178`, `alio`) is the fashion seller: 195 products across category ids `108846`–`108853`.
+- Merino (`6179`, `merino`) is the electronics seller: 127 products across category ids `108828`–`108842`.
+- Seller allocation is real Selldone variant-offer data. Never implement seller ownership as a display-only badge.
+- Public fallback seller presentation lives in `storefront/marketplace-config.js`; it may fill a pending vendor's name and description but must never supply price, stock, quantity, or checkout state.
+- Dedicated seller routes are `vendors.html` and `vendor.html?vendor=alio|merino`. Keep them in responsive audits, dead-control checks, footer/link checks, and deployment builds.
+- The seven audience shortcuts use exact restored product ids from the validated pre-cleanup snapshot because the public product-list payload omits shortcut relationships. Update those sets only after a fresh source/target comparison and a recoverable backup.
+- The supplied `walmart screenshot marko store/` folder is reference material only. Preserve it locally and exclude it from Git and deployment.
+
 ## Core Architecture
 
 - Storefront source lives in `storefront/` and is served at `/`.
@@ -10,6 +21,7 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
 - Shared browser modules live in `shared/`.
 - Static production output is generated into `dist/` by `scripts/build-static.mjs`.
 - Local product research under `storefront/assets/products/variants/references/` is never public build input; preserve it in the workspace but keep it out of `dist`, packages, Git, and deployment.
+- Local migration snapshots under `backups/` are recovery material. Preserve them in the workspace but keep them out of Git and deployment because they can contain private account metadata.
 - `scripts/dev-static.mjs` is only a local development file server. Do not add production Node server behavior.
 - Cloudflare Workers Static Assets must deploy `dist/` only through `wrangler deploy`. Do not deploy `.env`, logs, temp files, auth files, local browser profiles, or `dist/` source artifacts to git.
 

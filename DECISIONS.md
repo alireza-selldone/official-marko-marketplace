@@ -1,56 +1,35 @@
-# Fashioni design and implementation decisions
+# Marko marketplace decisions
 
-## Store identity
+## Identity and platform
 
-- Selldone shop: `Fashioni`, id `15552`, handle `fashioni`
-- Primary currency: USD
-- Store language: English
-- Live Selldone domain: `fashioni.myselldone.com`
-- Repository and Worker: `selldone-fashioni`
-- Preferred custom domain: `fashioni.selldone.shop`
+- Selldone shop: Marko, id `15596`, handle `marko-5vMFPy7t`
+- Store language and currency: English / USD
+- Storefront runtime: static HTML, CSS, and browser JavaScript backed by Selldone XAPI
+- Deployment target: Cloudflare Workers Static Assets under `selldone-marko-marketplace`
+- Starter provenance: Fashioni v2 commit `53286ca3b8f6ce805ec42509c61fe045c03cc036`
 
-## Catalog architecture
+## Seller architecture
 
-On 18 August 2026 the original 22 flat folders were consolidated into eight customer-facing product-type collections. The store now has 195 products. The final type structure is Activewear, Bags & Accessories, Dresses & One-Pieces, Footwear, Jackets & Layers, Shorts, Sunglasses, and Tops & T-Shirts.
+Marko has two specialist vendors. Alio owns all eight fashion product-type categories and their 195 products. Merino owns all fifteen electronics categories and their 127 products. Allocation is enforced in Selldone at variant-offer level: 1,603 Alio offers plus 397 Merino offers, with no duplicate keys, category/vendor mismatches, or quantity mismatches after migration.
 
-Discovery is deliberately dual-axis. Every applicable product keeps its product-type category and also receives one or more audience shortcuts: Women, Men, Girls, Boys, or Baby. Baby further divides into Baby Girls and Baby Boys. This avoids duplicate products while supporting both “what is it?” and “who is it for?” navigation.
+Seller attribution in the UI comes from the product's category-to-vendor mapping and is shown on cards and product detail pages. The public vendor API is used when a vendor is visible there; `marketplace-config.js` supplies non-commercial presentation fallback so a seller page remains navigable while an owner's invitation is pending. It never overrides product price, stock, or checkout data.
 
-The eight product-type collections are roots, and the five audience entries are root shortcuts. Baby Girls and Baby Boys are the only audience children and live beneath Baby. `All Products`, `Shop by category`, and the retired `Shop by Product` label are presentation copy only; none is a Selldone category or hierarchy wrapper. Taxonomy writes must be checked for self-parenting and cycles before mutation, then verified from the live hierarchy afterward.
+Merino's Selldone vendor account must be accepted by its owner account before it reappears in the platform's official public vendor directory. The custom Merino storefront remains functional and its 397 offers remain assigned during that pending state.
 
-## Header navigation
+## Catalogue and navigation
 
-The primary desktop navigation is centered as one compact group. `All Products` is the first item, followed by Girls, Boys, Baby, Women, Men, and Brands. The former `Shop by Product` top-level item was removed because it duplicated the product listing and could be mistaken for a catalogue category. Product-type links remain available under the presentation heading `Shop by category` and in listing filters; mobile keeps the same information order in its drawer.
+Product-type categories remain the canonical main categories. Women, Men, Girls, Boys, Baby, Baby Girls, and Baby Boys are audience shortcuts restored from the validated Fashioni migration snapshot. Baby Girls and Baby Boys sit beneath Baby; the other shortcuts are roots.
 
-Brands is a real discovery route rather than an alias for All Products. Hover/focus opens a compact menu generated from the brands with the highest live product counts and representative catalogue imagery. Clicking Brands opens a reusable A–Z directory with search, live counts, and popular-brand cards; selecting any brand lands on a listing titled for that brand and prefiltered to its products. No editorial brand category or separate image set is required.
+`All Products`, `Departments`, `Sellers`, and the retired `Shop by Product` label are presentation concepts only. They must never be created as Selldone categories. Taxonomy writes must reject self-parenting, cycles, duplicate wrappers, and missing parents before mutation and verify the live hierarchy afterwards.
 
-## Fashion references reviewed
+## Design direction
 
-Reviewed on 18 August 2026:
+The storefront uses an original Marko retail system: blue search-first header, compact department navigation, soft campaign fields, dense product rails, and seller-specific accent colors. Walmart was reviewed for marketplace information patterns such as search prominence, pickup/delivery utility, broad departments, merchandising rails, and dedicated seller destinations. No Walmart source code, logo, proprietary icon, copy, or media is reused.
 
-1. Zara — large campaign imagery, terse copy, high garment scale, and restrained navigation.
-2. Uniqlo — accessible product hierarchy, audience-aware navigation, clear category language, strong utility details, and compact retail density.
-3. SSENSE — editorial rhythm, generous whitespace, minimal chrome, and a clear separation between commerce and stories.
+The homepage intentionally mixes Alio and Merino product imagery in its first story. Subsequent stories focus on each seller. Dedicated seller pages use live product imagery and category counts, and remain responsive at desktop, tablet, and 390px mobile widths.
 
-Fashioni initially used Uniqlo as the closest reference because the live catalog has accessible prices, broad ages, and practical everyday categories. After a full desktop/tablet/mobile review on 18 August 2026, Next became the primary information-design reference: a two-tier audience header, broad mega menu, horizontal listing filters, dense responsive product grids, image-led homepage blocks, and a compact sticky product purchase column. SSENSE still informs editorial spacing and Zara informs campaign scale. No third-party source code, logo, product image, proprietary icon, or copy is reused.
+## Product options and accuracy
 
-## Visual system
+Color, Material, and Size are separate presentation dimensions. Size uses the shared variant classifier; internal slugs or material/color values must never leak into the Size filter. Audience filters use exact restored product-id sets because the public list endpoint omits shortcut relations.
 
-- Clean off-white canvas with dark ink typography and compact metadata.
-- Product-first cards with four columns on desktop and two on mobile.
-- Eight original transparent category cutouts share the same studio direction.
-- Category media occupies 69% of each card and uses `object-fit: contain` without cropping.
-- Five persistent color themes remain available as a preference, but all keep the same fashion layout and accessible contrast.
-- One shared header and footer is generated across home, shop, product, checkout, account, information, blog, and article routes.
-- The homepage campaign uses three user-approved editorial scenes derived from real catalogue products: evening sunglasses, coordinated womenswear/menswear, and children at play. Subjects remain on the right with copy-safe space on the left; the first-paint HTML and hydrated slider use the same asset and copy.
-
-## Product options and media
-
-Apparel and footwear use complete color-by-size matrices. Newly created apparel has three colors and five sizes per color; new kids' footwear has three colors and eight sizes per color. Existing size-applicable products were expanded to the relevant adult, baby, kids, or footwear scale. The interface groups colors separately from sizes and maps variant ids deterministically to gallery images. Every newly added color has at least three positive-stock sizes; in practice it has five or eight.
-
-## Accuracy boundaries
-
-Live prices, discounts, stock, product titles, categories, variant values, and images come from Selldone. Fashioni has not supplied verified contact details, delivery promises, return windows, fabric composition, care instructions, or fit claims for every product. The storefront therefore avoids inventing those facts and directs customers to checkout or merchant-supplied policy content where applicable.
-
-## Authentication and deployment
-
-Browser sign-in uses the public `Fashioni Storefront` OAuth client with Authorization Code + PKCE. Its client id is public configuration; no client secret exists or is shipped. Static assets are built into `dist/` and deployed to Cloudflare Workers under `selldone-fashioni`.
+Live prices, discounts, stock, variants, category data, brands, and product media come from Selldone. The storefront does not invent seller contact details, delivery promises, return windows, specifications, or legal identity.

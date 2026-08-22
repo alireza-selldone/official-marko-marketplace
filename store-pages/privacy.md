@@ -10,6 +10,7 @@ This page explains the storefront’s observable data flows. The merchant has no
 - The browser stores the shopping bag and selected visual theme locally on the customer’s device.
 - Customer sign-in uses Selldone OAuth with Authorization Code and PKCE. This storefront does not contain a client secret.
 - Checkout, payment, order history, and customer profile data are handled through the customer’s authenticated Selldone session.
+- Product and basket records can include the responsible marketplace vendor so the correct seller can fulfil and support the order.
 - A newsletter submission sends the entered email address to the shop’s Selldone audience stream.
 
 ## Payment and fulfilment

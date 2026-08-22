@@ -111,7 +111,7 @@ export function audit() {
   if (bodyBg !== 'rgb(244, 247, 251)') add('body-background-not-fashioni-surface', bodyBg);
   if (bodyFg !== 'rgb(16, 24, 40)') add('body-ink-not-fashioni-graphite', bodyFg);
 
-  /* 5. Card elevation is intentional in the Fashioni retail system. */
+  /* 5. Card elevation is intentional in the Marko retail system. */
 
   /* 6. fonts */
   /* document.fonts.check() returns true when NOTHING matches the family —

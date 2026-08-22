@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 
 const B = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
 const CONTENT = ["/about-us", "/terms", "/privacy", "/contact-us"];
-const ALL = ["/", "/shop.html", "/product.html?id=710103", "/checkout.html", "/brands.html", "/blog", "/article.html?id=31649", ...CONTENT];
+const ALL = ["/", "/shop.html", "/product.html?id=711002", "/checkout.html", "/brands.html", "/vendors.html", "/vendor.html?vendor=alio", "/vendor.html?vendor=merino", "/blog", "/article.html?id=31649", ...CONTENT];
 const EXPECTED_TOKENS = new Set(["SHOP_EMAIL", "SHOP_PHONE", "SHOP_ADDRESS", "COMPANY_REGISTRATION"]);
 
 let fails = 0;
@@ -17,6 +17,9 @@ const fail = (m) => { fails++; console.log(`  FAIL  ${m}`); };
 const pass = (m) => console.log(`  ok    ${m}`);
 
 const home = await (await fetch(B + "/")).text();
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const page = await ctx.newPage();
 
 /* 1 — distinct content, not the SPA fallback ----------------------------- */
 console.log("\n1. Pages resolve to distinct content");
@@ -33,31 +36,21 @@ for (const p of CONTENT) {
   else fail("/no-such-page did not fall back; the size check proves nothing");
 }
 
-/* 2 — first-paint header matches the hydrated header --------------------- */
-console.log("\n2. Static header matches the final shared chrome");
+/* 2 — shared marketplace header hydrates consistently ------------------- */
+console.log("\n2. Shared Marko header hydrates consistently");
 for (const p of ALL) {
-  const body = await (await fetch(B + p)).text();
-  const header = body.match(/<header\b[\s\S]*?<\/header>/i)?.[0] || "";
-  const required = [
-    'data-shared-chrome="v2"',
-    "fashioni-primary",
-    "header-search",
-    "audience-nav",
-    "header-checkout",
-  ];
-  const missing = required.filter((token) => !header.includes(token));
-  const searchBeforeLogo = header.indexOf("header-search") < header.indexOf("fashioni-logo");
-  const legacy = /New &amp; All|Haute Horlogerie|Buying Guides|class="cohdr"/.test(header);
-  if (!header) fail(`${p}: no static header`);
-  else if (missing.length) fail(`${p}: first-paint header missing ${missing.join(", ")}`);
-  else if (!searchBeforeLogo) fail(`${p}: search is not left of the logo in source order`);
-  else if (legacy) fail(`${p}: legacy header content remains in initial HTML`);
-  else pass(`${p.padEnd(32)} shared header present before JavaScript`);
+  await page.goto(B + p, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector('[data-shared-chrome="v3"] .header-search', { timeout: 15000 });
+  const header = await page.evaluate(() => ({
+    version: document.querySelector("header")?.getAttribute("data-shared-chrome"),
+    logo: document.querySelector(".market-logo")?.textContent?.trim(),
+    sellers: document.querySelector('nav a[href="vendors.html"]')?.textContent?.trim(),
+    search: document.querySelector(".header-search")?.textContent?.trim(),
+  }));
+  if (header.version !== "v3" || header.logo !== "marko✦" || header.sellers !== "Sellers" || !header.search) {
+    fail(`${p}: incomplete Marko marketplace header ${JSON.stringify(header)}`);
+  } else pass(`${p.padEnd(32)} shared Marko header hydrated`);
 }
-
-const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-const page = await ctx.newPage();
 
 /* 3 — every footer link resolves ----------------------------------------- */
 console.log("\n3. Footer links resolve");

@@ -1,4 +1,4 @@
-/* Fashioni checkout hand-off.
+/* Marko checkout hand-off.
    The local bag is synchronised to the authenticated Selldone physical basket;
    delivery, tax, gateway choice, payment, and order creation stay in Selldone's
    secure checkout so this storefront never invents commercial terms. */
@@ -36,7 +36,7 @@ async function init() {
   $("#promofield")?.remove();
   form.innerHTML = `<section class="fset">
     <p class="eyebrow eyebrow--blued">Secure hand-off</p>
-    <h1 class="h2">Review your Fashioni bag</h1>
+    <h1 class="h2">Review your Marko bag</h1>
     <p class="lede">We will copy these exact products, quantities, colors, and sizes to your Selldone basket.</p>
     <p class="cap">The next screen confirms live stock, delivery options, taxes, final total, and enabled payment methods. No payment is taken on this page.</p>
     <p class="cap" id="checkoutStatus" role="status"></p>

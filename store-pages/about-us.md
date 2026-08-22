@@ -1,14 +1,14 @@
 # About {{SHOP_NAME}}
 
-## Style for every move
+## One marketplace, two specialists
 
-{{SHOP_NAME}} is an online fashion storefront built to make a varied catalogue easier to explore. Instead of a long list of overlapping folders, the shop is organised into eight clear collections: Activewear, Bags & Accessories, Dresses & One-Pieces, Footwear, Jackets & Layers, Shorts, Sunglasses, and Tops & T-Shirts.
+{{SHOP_NAME}} is an online marketplace that brings two specialist sellers into one shopping experience. Alio offers fashion, activewear, footwear, sunglasses, bags, and accessories. Merino offers electronics for home, work, entertainment, content creation, and travel.
 
 ## How the catalogue works
 
-Products are displayed from the connected Selldone catalogue. Availability, prices, colors, and sizes can change, so the product page and secure checkout are the current source for each option. When a product offers more than one color, selecting a swatch changes the relevant product image and keeps the selected variant in the page link.
+Products are displayed from the connected Selldone catalogue. Availability, prices, specifications, colors, and sizes can change, so the product page and secure checkout are the current source for each option. Every product identifies its seller, while the shared bag and checkout keep shopping across the marketplace straightforward.
 
-Our style notes focus on practical choices: building a smaller wardrobe, coordinating color, checking fit, and following the care label attached to the exact garment.
+Departments describe what a product is; Women, Men, Girls, Boys, and Baby are discovery shortcuts for relevant fashion products. Alio and Merino also have dedicated storefronts where customers can browse each seller's complete live range.
 
 ## Merchant details
 

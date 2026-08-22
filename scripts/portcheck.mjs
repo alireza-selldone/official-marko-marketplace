@@ -89,11 +89,11 @@ async function run(browser, { nCats, nProducts = 40, cfg = null, label }) {
     const grid = document.getElementById("catgrid");
     const section = grid ? grid.closest("section") : null;
     return {
-      tiles: document.querySelectorAll("#catgrid .cat").length,
+      tiles: document.querySelectorAll("#catgrid .market-cat").length,
       n: grid ? grid.dataset.n : null,
       cols: grid ? getComputedStyle(grid).gridTemplateColumns.split(" ").length : 0,
       hidden: section ? section.hidden : null,
-      slugs: [...document.querySelectorAll("#catgrid .cat")].map((a) => a.getAttribute("href")),
+      slugs: [...document.querySelectorAll("#catgrid .market-cat")].map((a) => a.getAttribute("href")),
       banner: !!document.querySelector(".tplbanner"),
       cards: document.querySelectorAll(".pcard").length,
       est: document.querySelector("[data-brand-est]") ? document.querySelector("[data-brand-est]").textContent : null,
@@ -120,7 +120,7 @@ const browser = await chromium.launch();
 
 console.log("\nA DIFFERENT SHOP — none of this repo's category ids appear in the data");
 console.log("-".repeat(66));
-for (const [nCats, wantCols] of [[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4], [9, 4], [10, 4]]) {
+for (const [nCats, wantCols] of [[3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6], [10, 6]]) {
   const r = await run(browser, { nCats, cfg: REAL_CFG, label: `${nCats} categories` });
   const expectedTiles = Math.min(nCats, 8);
   const ok = r.tiles === expectedTiles && r.cols === wantCols && !r.hidden;

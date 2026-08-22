@@ -1,7 +1,0 @@
-name = "selldone-fashioni"
-main = "worker-proxy.mjs"
-compatibility_date = "2026-08-01"
-
-[[routes]]
-pattern = "fashioni.selldone.shop"
-custom_domain = true

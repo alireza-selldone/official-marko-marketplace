@@ -1,5 +1,5 @@
 {
-  "name": "selldone-fashioni",
+  "name": "selldone-marko-marketplace",
   "scripts": {
     "build": "npm run build:static",
     "build:static": "node scripts/build-static.mjs",

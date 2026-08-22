@@ -18,8 +18,8 @@
 import { chromium } from "playwright";
 
 const B = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
-const PAGES = [["home","/","#catgrid .cat"],["shop","/shop.html","#pgrid .pcard"],
-                ["product","/product.html?id=710152","#pdp h1"],
+const PAGES = [["home","/","#catgrid .market-cat"],["shop","/shop.html","#pgrid .pcard"],
+                ["product","/product.html?id=711002","#pdp h1"],
                 // #sumrows is static markup present before hydration. checkout.js
                 // binds #next and .promo after awaiting the catalog, so waiting on
                 // the container reports both as unwired. Wait for a rendered row.
@@ -28,11 +28,14 @@ const PAGES = [["home","/","#catgrid .cat"],["shop","/shop.html","#pgrid .pcard"
                 ["privacy","/privacy",".prose"],["contact","/contact-us",".prose"],
                 ["blog","/blog",".post"],
                 ["article","/article.html?id=31667","[data-article-body] p"],
-                ["brands","/brands.html",".brand-directory a"]];
+                ["brands","/brands.html",".brand-directory a"],
+                ["sellers","/vendors.html","[data-vendor-directory] article"],
+                ["alio","/vendor.html?vendor=alio","[data-vendor-products] .pcard"],
+                ["merino","/vendor.html?vendor=merino","[data-vendor-products] .pcard"]];
 
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport:{width:1440,height:900} });
-await ctx.addInitScript(v=>localStorage.setItem("storefront_bag_v1",v), JSON.stringify([{id:710152,qty:1,variantId:1401322}]));
+await ctx.addInitScript(v=>localStorage.setItem("storefront_bag_v1",v), JSON.stringify([{id:711002,qty:1,variantId:1406480}]));
 
 /* Runs before page scripts, so every listener the app registers is recorded. */
 await ctx.addInitScript(() => {

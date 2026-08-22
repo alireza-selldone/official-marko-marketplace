@@ -16,8 +16,11 @@ function chrome() {
   const rawHead = src.slice(src.indexOf("<head>"), src.indexOf("</head>"));
   const head = rawHead.replace(/[ \t]*<script type="module" src="home\.js"><\/script>\r?\n/, "");
   if (head === rawHead) throw new Error("home.js script tag not found in index.html head");
+  const bodyStart = src.search(/  <body\b/);
+  const mainStart = src.indexOf('<main id="main"');
+  if (bodyStart < 0 || mainStart < 0) throw new Error("index.html body or main marker not found");
   const top = src
-    .slice(src.indexOf("  <body>"), src.indexOf('<main id="main"'))
+    .slice(bodyStart, mainStart)
     .replaceAll('href="#service"', 'href="index.html#service"');
   return { head, top, tail: src.slice(src.indexOf("      </main>")) };
 }
@@ -26,13 +29,13 @@ const PAGES = [
   {
     file: "blog.html",
     script: "blog.js",
-    title: "Buying Guides — Fashioni",
-    desc: "Practical Fashioni guides for styling, fitting, and caring for an everyday wardrobe.",
+    title: "Buying Guides — Marko",
+    desc: "Practical Marko guides for styling, fitting, and caring for an everyday wardrobe.",
     main: `<main id="main" tabindex="-1">
 
         <section class="pghead ink">
           <div class="wrap">
-            <p class="eyebrow eyebrow--onink">Fashioni insights</p>
+            <p class="eyebrow eyebrow--onink">Marko insights</p>
             <h1 class="h1">Buying Guides</h1>
             <p class="pghead__meta" data-blog-count></p>
           </div>
@@ -50,7 +53,7 @@ const PAGES = [
             </div>
             <div class="sempty" data-blog-empty hidden>
               <p class="h3" style="margin-bottom:6px">No articles yet</p>
-              <p class="cap">New Fashioni buying guides will appear here.</p>
+              <p class="cap">New Marko buying guides will appear here.</p>
             </div>
           </div>
         </section>
@@ -60,15 +63,15 @@ const PAGES = [
   {
     file: "article.html",
     script: "article.js",
-    title: "Buying Guides — Fashioni",
-    desc: "A practical fashion and wardrobe guide from Fashioni.",
+    title: "Buying Guides — Marko",
+    desc: "A practical fashion and wardrobe guide from Marko.",
     main: `<main id="main" tabindex="-1">
 
         <article data-article>
           <section class="pghead ink">
             <div class="wrap">
               <div class="pgcol">
-                <p class="eyebrow eyebrow--onink" data-article-cat>Fashioni guide</p>
+                <p class="eyebrow eyebrow--onink" data-article-cat>Marko guide</p>
                 <h1 class="h1" data-article-title>&nbsp;</h1>
                 <p class="pghead__meta" data-article-meta></p>
               </div>

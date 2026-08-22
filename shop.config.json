@@ -1,80 +1,72 @@
 {
-  "$comment": "Public, non-secret storefront configuration for the connected Fashioni shop.",
+  "$comment": "Public, non-secret marketplace storefront configuration for Marko.",
   "shop": {
-    "id": 15552,
-    "handle": "fashioni",
-    "name": "Fashioni",
-    "domain": "fashioni.myselldone.com"
+    "id": 15596,
+    "handle": "marko-5vMFPy7t",
+    "name": "Marko",
+    "domain": "marko-5vMFPy7t.myselldone.com"
   },
   "isTemplate": false,
   "oauth": {
-    "clientId": "01a01272-29fd-70ca-83c4-7554bc34060b",
-    "appName": "Fashioni Storefront"
+    "clientId": "",
+    "appName": "Marko Storefront"
   },
   "brand": {
-    "foundedYear": null,
-    "cities": null,
-    "tagline": "Style for every move.",
-    "announcement": "Fresh fashion · Easy discovery · Secure checkout"
+    "foundedYear": 2026,
+    "cities": "Europe",
+    "tagline": "Everything you need, from people you can trust.",
+    "announcement": "Free pickup · Easy returns · Secure checkout"
   },
   "categories": [
-    {
-      "id": 108637,
-      "slug": "activewear",
-      "blurb": "Sports bras, leggings, performance shorts, training tops, and sport footwear for active routines."
-    },
-    {
-      "id": 108631,
-      "slug": "bags-accessories",
-      "blurb": "Practical bags, socks, and finishing pieces for complete everyday looks."
-    },
-    {
-      "id": 108622,
-      "slug": "dresses-one-pieces",
-      "blurb": "Dresses, coordinated one-pieces, and swim-ready styles for everyday and occasion dressing."
-    },
-    {
-      "id": 108633,
-      "slug": "footwear",
-      "blurb": "Everyday shoes for women, men, and kids across casual, smart, and sporty silhouettes."
-    },
-    {
-      "id": 108624,
-      "slug": "jackets-layers",
-      "blurb": "Lightweight jackets and layering pieces for changing weather and polished outfits."
-    },
-    {
-      "id": 108620,
-      "slug": "shorts",
-      "blurb": "Comfortable shorts for casual days, warm weather, and easy movement."
-    },
-    {
-      "id": 108627,
-      "slug": "sunglasses",
-      "blurb": "Sun-ready eyewear for adults and children in varied shapes and color combinations."
-    },
-    {
-      "id": 108619,
-      "slug": "tops-t-shirts",
-      "blurb": "Blouses, tees, and easy tops designed for versatile daily styling."
-    }
+    { "id": 108853, "slug": "activewear", "blurb": "Performance layers and everyday movement." },
+    { "id": 108852, "slug": "footwear", "blurb": "Shoes for work, weekends, sport, and play." },
+    { "id": 108848, "slug": "dresses-and-one-pieces", "blurb": "One-piece looks for every plan." },
+    { "id": 108846, "slug": "tops-and-t-shirts", "blurb": "Everyday tops, tees, and tanks." },
+    { "id": 108847, "slug": "shorts", "blurb": "Comfortable shorts for every pace." },
+    { "id": 108849, "slug": "jackets-and-layers", "blurb": "Light layers and outerwear." },
+    { "id": 108850, "slug": "sunglasses", "blurb": "Frames for bright days and bold looks." },
+    { "id": 108851, "slug": "bags-and-accessories", "blurb": "Finishing touches and carry-everywhere bags." },
+    { "id": 108828, "slug": "laptop", "blurb": "Computing for work, study, and play." },
+    { "id": 108837, "slug": "monitors", "blurb": "Clear, productive desktop displays." },
+    { "id": 108830, "slug": "tvs", "blurb": "Big-screen entertainment at home." },
+    { "id": 108829, "slug": "microphones", "blurb": "Create, stream, and record clearly." },
+    { "id": 108831, "slug": "headphones", "blurb": "Personal audio for every day." },
+    { "id": 108834, "slug": "earbuds", "blurb": "Compact wireless listening." },
+    { "id": 108832, "slug": "digital-cameras", "blurb": "Capture everyday moments and adventures." },
+    { "id": 108841, "slug": "action-cameras", "blurb": "Rugged cameras for life in motion." },
+    { "id": 108833, "slug": "power-banks", "blurb": "Portable power wherever you go." },
+    { "id": 108842, "slug": "rv-power-stations", "blurb": "Reliable power for travel and backup." },
+    { "id": 108835, "slug": "flash-drives", "blurb": "Simple portable storage." },
+    { "id": 108836, "slug": "hard-drives", "blurb": "Extra space for important files." },
+    { "id": 108838, "slug": "printers", "blurb": "Practical printing for home and office." },
+    { "id": 108839, "slug": "keyboards", "blurb": "Comfortable control for every setup." },
+    { "id": 108840, "slug": "mice", "blurb": "Fast, precise pointing and play." }
   ],
   "audiences": [
-    { "id": 108656, "slug": "girls", "title": "Girls", "image": "assets/categories/girls.png" },
-    { "id": 108657, "slug": "boys", "title": "Boys", "image": "assets/categories/boys.png" },
-    { "id": 108658, "slug": "baby", "title": "Baby", "image": "assets/categories/baby.png" },
-    { "id": 108654, "slug": "women", "title": "Women", "image": "assets/categories/women.png" },
-    { "id": 108655, "slug": "men", "title": "Men", "image": "assets/categories/men.png" }
+    { "id": 108854, "slug": "women", "title": "Women", "image": "assets/categories/women.png" },
+    { "id": 108855, "slug": "men", "title": "Men", "image": "assets/categories/men.png" },
+    { "id": 108856, "slug": "girls", "title": "Girls", "image": "assets/categories/girls.png" },
+    { "id": 108857, "slug": "boys", "title": "Boys", "image": "assets/categories/boys.png" },
+    { "id": 108858, "slug": "baby", "title": "Baby", "image": "assets/categories/baby.png" },
+    { "id": 108859, "slug": "baby-girls", "title": "Baby Girls", "image": "assets/categories/baby-girls.png" },
+    { "id": 108860, "slug": "baby-boys", "title": "Baby Boys", "image": "assets/categories/baby-boys.png" }
   ],
   "categoryHeroes": {
-    "activewear": 710265,
-    "bags-accessories": 710194,
-    "dresses-one-pieces": 710135,
-    "footwear": 710207,
-    "jackets-layers": 710159,
-    "shorts": 710126,
-    "sunglasses": 710178,
-    "tops-t-shirts": 710125
+    "activewear": 711002,
+    "footwear": 711062,
+    "dresses-and-one-pieces": 711072,
+    "tops-and-t-shirts": 711082,
+    "sunglasses": 710958,
+    "bags-and-accessories": 711022,
+    "tvs": 710825,
+    "digital-cameras": 710866,
+    "power-banks": 710782,
+    "earbuds": 710783,
+    "flash-drives": 710784,
+    "hard-drives": 710785,
+    "rv-power-stations": 710883,
+    "jackets-and-layers": 711074,
+    "laptop": 710846
   },
   "hero": {
     "mode": "slides",
@@ -83,26 +75,26 @@
       "w": 1,
       "h": 1
     },
-    "linkProductId": 710265,
+    "linkProductId": 710892,
     "hotspots": [],
     "slides": [
       {
-        "productId": 710265,
-        "kicker": "Active essentials",
-        "title": "Move in your own rhythm.",
-        "lede": "Explore performance-minded layers, coordinated colors, and everyday comfort."
+        "productId": 710892,
+        "kicker": "",
+        "title": "",
+        "lede": ""
       },
       {
-        "productId": 710254,
-        "kicker": "Everyday accessories",
-        "title": "Details that finish the look.",
-        "lede": "Discover practical socks and accessories in easy-to-style color combinations."
+        "productId": 710830,
+        "kicker": "",
+        "title": "",
+        "lede": ""
       },
       {
-        "productId": 710183,
-        "kicker": "Sun-ready style",
-        "title": "A lighter view of the season.",
-        "lede": "Browse sunglasses for adults and kids across classic and playful silhouettes."
+        "productId": 710847,
+        "kicker": "",
+        "title": "",
+        "lede": ""
       }
     ]
   },

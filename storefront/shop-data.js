@@ -12,6 +12,7 @@ import { getPublicConfig } from "../shared/runtime-config.js";
 import { shopConfig, slugify } from "./shop-config.js";
 import { selldoneImagePathToUrl } from "../dashboard/features/selldone-images.js";
 import { variantSizeOptions } from "./variant-options.js";
+import { AUDIENCE_PRODUCT_IDS, vendorForCategory } from "./marketplace-config.js";
 
 const cfg = getPublicConfig();
 
@@ -466,7 +467,9 @@ function orderCategories(cfg, index) {
    file, never committed. Publishable keys are client-side by design; the
    secret key is not exposed by this endpoint and is never handled here. */
 const URL_SHOP_INFO = () => `${SHOP.xapi}/shops/@${SHOP.handle}/info`;
+const URL_MARKETPLACE_VENDORS = () => `${SHOP.xapi}/shops/@${SHOP.handle}/vendors?limit=50`;
 let _shop = null;
+let _vendors = null;
 
 export async function loadShop() {
   if (_shop) return _shop;
@@ -490,36 +493,20 @@ export async function loadShop() {
 /* ---------- Catalog ---------- */
 let _cache = null;
 
-/* Selldone stores shortcut categories correctly, but its public product-list
-   payload currently omits them. Mirror the shop's published assignment here so
-   audience landing pages remain usable without 195 product-detail requests. */
+export async function loadVendors() {
+  if (_vendors) return _vendors;
+  const response = await fetch(URL_MARKETPLACE_VENDORS(), { mode: "cors", headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(`vendors ${response.status}`);
+  const json = await response.json();
+  _vendors = Array.isArray(json.vendors) ? json.vendors : [];
+  return _vendors;
+}
+
 function mirroredAudienceIds(id) {
-  const n = Number(id);
-  const bothAdults = [108654, 108655], bothKids = [108656, 108657];
-  if (n >= 710122 && n <= 710151) return [108654];
-  if (n >= 710152 && n <= 710161) return [108655];
-  if (n >= 710162 && n <= 710164) return [108656];
-  if (n === 710165) return [108658, 108660];
-  if (n >= 710166 && n <= 710168) return [108656];
-  if (n === 710170) return [108655];
-  if ((n >= 710169 && n <= 710183) || (n >= 710185 && n <= 710187)) return bothAdults;
-  if (n === 710184 || (n >= 710188 && n <= 710189)) return bothKids;
-  if ((n >= 710190 && n <= 710192) || (n >= 710194 && n <= 710201)) return [108654];
-  if (n === 710193) return bothAdults;
-  if (n === 710202 || (n >= 710219 && n <= 710225)) return bothKids;
-  if (n >= 710203 && n <= 710210) return [108655];
-  if ((n >= 710211 && n <= 710218) || (n >= 710226 && n <= 710236)) return [108654];
-  if (n >= 710237 && n <= 710256) return bothAdults;
-  if (n >= 710257 && n <= 710266) return [108654];
-  if (n >= 710267 && n <= 710276) return bothAdults;
-  if ([710278, 710283, 710285].includes(n)) return bothAdults;
-  if (n >= 710277 && n <= 710286) return [108654];
-  if (n >= 710310 && n <= 710319) return [108655];
-  if (n >= 710320 && n <= 710324) return [108658, 108660];
-  if (n >= 710325 && n <= 710329) return [108658, 108659];
-  if (n >= 710330 && n <= 710334) return [108657];
-  if (n >= 710335 && n <= 710339) return [108656];
-  return [];
+  const productId = Number(id);
+  return Object.entries(AUDIENCE_PRODUCT_IDS)
+    .filter(([, productIds]) => productIds.includes(productId))
+    .map(([categoryId]) => Number(categoryId));
 }
 
 export async function loadCatalog() {
@@ -555,6 +542,7 @@ export async function loadCatalog() {
       .filter(Number.isFinite);
     const shortcutIds = shortcutIdsFromApi.length ? shortcutIdsFromApi : mirroredAudienceIds(p.id);
     const variants = variantsOf(p);
+    const marketplaceVendor = vendorForCategory(p.category_id);
     /* A storage field can contain a size, material slug, or legacy token. Only
        the consistently size-shaped dimension is exposed to listing filters. */
     const stockedVariants = variants.filter((variant) => variant.qty > 0);
@@ -566,6 +554,10 @@ export async function loadCatalog() {
       brand: p.brand || "",
       cat: slug,
       catName: index.get(Number(p.category_id))?.title || "",
+      categoryId: Number(p.category_id),
+      vendorId: marketplaceVendor?.id || null,
+      vendorSlug: marketplaceVendor?.slug || "",
+      vendorName: marketplaceVendor?.name || "",
       price: finalPrice(p),
       was: wasPrice(p),
       saleStartsAt: p.dis_start || "",
@@ -587,10 +579,11 @@ export async function loadCatalog() {
   });
 
   /* Below three categories the grid reads as a lonely tile rather than a
-     collection, so the section is dropped entirely. Above ten it stops being
-     scannable, so the ten largest are kept — `catsDropped` records how many
-     were left out so the caller can say so rather than silently truncating. */
-  const MIN_CATS = 3, MAX_CATS = 15;
+     collection, so the section is dropped entirely. Marko is a mixed
+     marketplace, so all current fashion and technology departments remain
+     available to filters and seller pages; `catsDropped` is still retained as
+     a guard if a future import grows beyond the storefront's practical cap. */
+  const MIN_CATS = 3, MAX_CATS = 24;
   const heroes = cfg.categoryHeroes || {};
   let cats = orderCategories(cfg, index).map((id) => {
     const meta = index.get(id);

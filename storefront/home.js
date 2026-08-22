@@ -1,273 +1,107 @@
-/* Fashioni homepage — live Selldone catalog with an editorial fashion shell. */
+import { loadCatalog, loadVendors } from "./shop-data.js";
+import { cardHTML, esc } from "./app.js";
+import { MARKETPLACE_VENDORS } from "./marketplace-config.js";
 
-import {
-  loadCatalog, loadReviews, loadTaggedProductIds,
-  money, img, swatchStyle, swatchLabel,
-} from "./shop-data.js";
-import { cardHTML, esc, saleBadgeHTML } from "./app.js";
-
-const CATEGORY_ART = {
-  108637: "activewear.png",
-  108631: "bags-accessories.png",
-  108622: "dresses-one-pieces.png",
-  108633: "footwear.png",
-  108624: "jackets-layers.png",
-  108620: "shorts.png",
-  108627: "sunglasses.png",
-  108619: "tops-t-shirts.png",
-};
-
-const CAMPAIGNS = [
-  {
-    image: "assets/campaigns/sunglasses-after-dark.webp",
-    alt: "Woman wearing Fashioni cat-eye sunglasses in an evening city setting",
-    kicker: "After-dark details",
-    title: "Confidence in every frame.",
-    titleLines: ["Confidence in", "every frame."],
-    lede: "Discover expressive sunglasses that bring a polished finish to day and evening looks.",
-    label: "Shop sunglasses",
-    href: "shop.html?cat=sunglasses",
-  },
-  {
-    image: "assets/campaigns/style-together.webp",
-    alt: "Couple wearing coordinated Fashioni womenswear and menswear",
-    kicker: "Style, together",
-    title: "Two wardrobes. One point of view.",
-    titleLines: ["Two wardrobes.", "One point of view."],
-    lede: "Explore polished everyday pieces for women and men, designed to work beautifully together.",
-    label: "Shop women & men",
-    href: "shop.html?audience=adults",
-  },
-  {
-    image: "assets/campaigns/made-for-play.webp",
-    alt: "Children playing in Fashioni girls and boys outfits",
-    kicker: "Made for play",
-    title: "Easy style. Big adventures.",
-    titleLines: ["Easy style.", "Big adventures."],
-    lede: "Find comfortable girls' and boys' styles made for movement, color, and everyday fun.",
-    label: "Shop kids",
-    href: "shop.html?audience=kids",
-  },
+const HERO_STORIES = [
+  { kicker: "One marketplace. Two specialist sellers.", title: "Everything your day needs.", lede: "Fresh fashion from Alio and practical technology from Merino, together in one easy shop.", label: "Shop all products", href: "shop.html", vendors: ["alio", "merino"] },
+  { kicker: "Alio fashion", title: "New looks, ready to move.", lede: "Everyday style, activewear, footwear, and accessories selected for real life.", label: "Visit Alio", href: "vendor.html?vendor=alio", vendors: ["alio"] },
+  { kicker: "Merino technology", title: "Smarter gear. Better days.", lede: "Useful electronics for work, entertainment, creating, and life on the go.", label: "Visit Merino", href: "vendor.html?vendor=merino", vendors: ["merino"] },
 ];
 
-function initCampaigns() {
-  const image = document.querySelector("[data-hero-img]");
-  const kicker = document.querySelector("[data-campaign-kicker]");
-  const title = document.querySelector("[data-campaign-title]");
-  const lede = document.querySelector("[data-campaign-lede]");
-  const link = document.querySelector("[data-hero-link]");
-  const dots = document.querySelector("[data-campaign-dots]");
-  if (!image || !dots) return;
+const interleave = (left, right, limit = 12) => {
+  const rows = [];
+  for (let index = 0; rows.length < limit && (left[index] || right[index]); index += 1) {
+    if (left[index]) rows.push(left[index]);
+    if (right[index] && rows.length < limit) rows.push(right[index]);
+  }
+  return rows;
+};
 
+function renderHero(catalog) {
+  const root = document.querySelector("[data-market-hero]");
+  const art = document.querySelector("[data-market-hero-art]");
+  const dots = document.querySelector("[data-market-hero-dots]");
+  if (!root || !art || !dots) return;
   let active = 0;
   let timer;
   const paint = (index, restart = true) => {
-    active = (index + CAMPAIGNS.length) % CAMPAIGNS.length;
-    const item = CAMPAIGNS[active];
-    image.src = item.image;
-    image.alt = item.alt;
-    kicker.textContent = item.kicker;
-    title.innerHTML = item.titleLines.map((line) => `<span>${esc(line)}</span>`).join(" ");
-    lede.textContent = item.lede;
-    link.textContent = item.label;
-    link.href = item.href;
-    dots.querySelectorAll("button").forEach((button, i) => {
-      button.setAttribute("aria-current", i === active ? "true" : "false");
-    });
-    if (restart) {
-      clearInterval(timer);
-      timer = setInterval(() => paint(active + 1, false), 6500);
-    }
+    active = (index + HERO_STORIES.length) % HERO_STORIES.length;
+    const story = HERO_STORIES[active];
+    const vendorPools = story.vendors.map((vendor) =>
+      catalog.products.filter((product) => product.vendorSlug === vendor && product.qty > 0),
+    );
+    const pool = vendorPools.length === 2
+      ? interleave(vendorPools[0], vendorPools[1], vendorPools[0].length + vendorPools[1].length)
+      : vendorPools[0];
+    const start = active * 5;
+    const picks = [pool[start], pool[start + 2], pool[start + 4]].filter(Boolean);
+    root.querySelector("[data-hero-kicker]").textContent = story.kicker;
+    root.querySelector("[data-hero-title]").textContent = story.title;
+    root.querySelector("[data-hero-lede]").textContent = story.lede;
+    const link = root.querySelector("[data-hero-link]");
+    link.textContent = story.label;
+    link.href = story.href;
+    art.innerHTML = picks.map((product, productIndex) => `<a class="market-hero__product market-hero__product--${productIndex + 1}" href="product.html?id=${product.id}"><img src="${esc(product.image)}" alt="${esc(product.name)}" width="520" height="520"><span>${esc(product.name)}</span></a>`).join("");
+    dots.querySelectorAll("button").forEach((button, dotIndex) => button.setAttribute("aria-current", String(dotIndex === active)));
+    root.dataset.story = story.vendors.length === 1 ? story.vendors[0] : "market";
+    if (restart) { clearInterval(timer); timer = setInterval(() => paint(active + 1, false), 7000); }
   };
-
-  dots.innerHTML = CAMPAIGNS.map((item, i) =>
-    `<button type="button" aria-label="Show ${esc(item.kicker)} campaign" aria-current="${i === 0}"></button>`,
-  ).join("");
-  dots.addEventListener("click", (event) => {
-    const button = event.target.closest("button");
-    if (button) paint([...dots.children].indexOf(button));
-  });
+  dots.innerHTML = HERO_STORIES.map((story, index) => `<button type="button" aria-label="Show ${esc(story.kicker)}" aria-current="${index === 0}"></button>`).join("");
+  dots.addEventListener("click", (event) => { const button = event.target.closest("button"); if (button) paint([...dots.children].indexOf(button)); });
   paint(0);
 }
 
-function taggedProducts(catalog, ids) {
-  const byId = new Map(catalog.products.map((product) => [Number(product.id), product]));
-  return ids.map((id) => byId.get(Number(id))).filter(Boolean);
-}
-
-function bestSellerCardHTML(product, index) {
-  const saleBadge = saleBadgeHTML(product, "best");
-  const colors = [...new Set(product.colors || [])].slice(0, 5).map((color) => {
-    const variants = (product.variants || []).filter((variant) =>
-      String(variant.color).toUpperCase() === String(color).toUpperCase());
-    const imageVariant = variants.find((variant) => variant.image) || variants[0];
-    return {
-      color,
-      variantId: imageVariant?.id || "",
-      image: imageVariant?.image ? img(imageVariant.image) : product.image,
-    };
-  });
-  const rank = String(index + 1).padStart(2, "0");
-  return `<article class="bscard${saleBadge ? " has-timed-sale" : ""}" data-card-product="${product.id}">
-    <a class="bscard__link pcard__link" href="product.html?id=${product.id}">
-      <span class="bscard__visual">
-        <span class="bscard__label">Best seller</span>
-        <span class="bscard__rank" aria-hidden="true">${rank}</span>
-        ${saleBadge}
-        <img src="${product.image}" alt="${esc(product.name)}" loading="lazy" width="600" height="600" data-card-image>
-      </span>
-      <span class="bscard__copy">
-        <span class="bscard__meta"><span>${esc(product.brand || product.catName || "Fashioni")}</span><span>No. ${rank}</span></span>
-        <strong>${esc(product.name)}</strong>
-        <span class="bscard__price">${product.was ? `<s>${money(product.was)}</s>` : ""}<b>${product.range?.varies ? `From ${money(product.range.from)}` : money(product.price)}</b></span>
-      </span>
-    </a>
-    ${colors.length ? `<span class="pcard__swatches bscard__swatches" role="radiogroup" aria-label="Choose a color for ${esc(product.name)}">${colors.map((option, colorIndex) => `<button class="pcard__swatch${colorIndex ? "" : " is-on"}" type="button" role="radio" aria-checked="${colorIndex ? "false" : "true"}" aria-label="${esc(swatchLabel(option.color))}" data-card-color="${esc(String(option.color))}" data-card-variant="${option.variantId}" data-card-image-src="${esc(option.image)}"><span aria-hidden="true" style="${swatchStyle(option.color)}"></span></button>`).join("")}</span>` : ""}
-  </article>`;
-}
-
-function fillHome(catalog, { trendingIds = [], bestSellerIds = [] } = {}) {
-  const ids = new Map((catalog.cfg.categories || []).map((item) => [item.slug, item.id]));
+function renderCategories(catalog) {
   const grid = document.getElementById("catgrid");
-  const categorySection = grid?.closest("section");
-  if (categorySection) categorySection.hidden = catalog.cats.length === 0;
-  if (grid) {
-    const featuredCategories = catalog.cats.slice(0, 8);
-    grid.dataset.n = String(featuredCategories.length);
-    grid.innerHTML = featuredCategories.map((category) => {
-      const art = CATEGORY_ART[ids.get(category.slug)];
-      return `<a class="cat fashioni-cat" href="shop.html?cat=${encodeURIComponent(category.slug)}">
-        <span class="fashioni-cat__art"><img src="${art ? `assets/categories/${art}` : category.image}" alt="${esc(category.name)}" loading="lazy" width="500" height="500"></span>
-        <span class="fashioni-cat__copy"><b>${esc(category.name)}</b><small>${category.count} products</small></span>
-      </a>`;
-    }).join("");
+  if (!grid) return;
+  if (catalog.cats.length < 3) {
+    grid.closest("section").hidden = true;
+    return;
   }
-
-  document.querySelectorAll("[data-all-refs]").forEach((link) => {
-    link.textContent = `All ${catalog.products.length} products →`;
-  });
-
-  const arrivals = document.getElementById("arrivals");
-  if (arrivals) {
-    const trending = taggedProducts(catalog, trendingIds);
-    arrivals.closest("section").hidden = trending.length === 0;
-    arrivals.innerHTML = trending.map(cardHTML).join("");
-    const countLink = arrivals.closest("section")?.querySelector("[data-trending-count]");
-    if (countLink) countLink.textContent = `All ${trending.length} trending products →`;
-    initDragScroller(arrivals);
-  }
-
-  const bestSellerTrack = document.getElementById("best-sellers");
-  if (bestSellerTrack) {
-    const bestSellers = taggedProducts(catalog, bestSellerIds);
-    const section = bestSellerTrack.closest("section");
-    section.hidden = bestSellers.length === 0;
-    bestSellerTrack.innerHTML = bestSellers.map(bestSellerCardHTML).join("");
-    const count = section.querySelector("[data-best-seller-count]");
-    if (count) count.textContent = `${bestSellers.length} tagged favorites`;
-    initDragScroller(bestSellerTrack);
-  }
-
-  const categories = catalog.cats.length;
-  document.querySelectorAll("[data-category-count]").forEach((el) => { el.textContent = categories; });
-
-  renderHomeReviews(catalog.products);
+  const fashion = catalog.cats.filter((category) => catalog.products.some((product) => product.cat === category.slug && product.vendorSlug === "alio"));
+  const electronics = catalog.cats.filter((category) => catalog.products.some((product) => product.cat === category.slug && product.vendorSlug === "merino"));
+  const specialist = interleave(fashion, electronics, 12);
+  const specialistIds = new Set(specialist.map((category) => category.id));
+  const generic = catalog.cats.filter((category) => !specialistIds.has(category.id));
+  const limit = specialist.length ? 12 : 8;
+  grid.innerHTML = [...specialist, ...generic].slice(0, limit).map((category) => `<a class="market-cat" href="shop.html?cat=${encodeURIComponent(category.slug)}"><span><img src="${esc(category.image)}" alt="" loading="lazy" width="280" height="280"></span><b>${esc(category.name)}</b><small>${category.count} products</small></a>`).join("");
 }
 
-function initDragScroller(scroller) {
-  if (!scroller || scroller.dataset.dragWired) return;
-  scroller.dataset.dragWired = "true";
-  let pointerId = null;
-  let startX = 0;
-  let startScroll = 0;
-  let dragged = false;
-
-  scroller.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    pointerId = event.pointerId;
-    startX = event.clientX;
-    startScroll = scroller.scrollLeft;
-    dragged = false;
-  });
-  scroller.addEventListener("pointermove", (event) => {
-    if (event.pointerId !== pointerId) return;
-    const delta = event.clientX - startX;
-    if (!dragged && Math.abs(delta) > 5) {
-      dragged = true;
-      scroller.classList.add("is-dragging");
-      scroller.setPointerCapture(pointerId);
-    }
-    if (dragged) scroller.scrollLeft = startScroll - delta;
-  });
-  const release = (event) => {
-    if (event.pointerId !== pointerId) return;
-    pointerId = null;
-    scroller.classList.remove("is-dragging");
-  };
-  scroller.addEventListener("pointerup", release);
-  scroller.addEventListener("pointercancel", release);
-  scroller.addEventListener("click", (event) => {
-    if (!dragged) return;
-    event.preventDefault();
-    event.stopPropagation();
-    dragged = false;
-  }, true);
-}
-
-function renderHomeReviews(products) {
-  const summary = loadReviews(products);
-  const average = document.querySelector("[data-home-review-average]");
-  const count = document.querySelector("[data-home-review-count]");
-  const mode = document.querySelector("[data-home-review-mode]");
-  const breakdown = document.querySelector("[data-home-review-breakdown]");
-  const grid = document.querySelector("[data-home-reviews]");
-  const disclosure = document.querySelector("[data-home-review-disclosure]");
-  if (!grid || !breakdown) return;
-
-  if (average) average.textContent = summary.average.toFixed(1);
-  if (count) count.textContent = `${summary.total} ${summary.sample ? "sample reviews" : "live ratings"}`;
-  if (mode) mode.textContent = summary.sample ? "Sample customer notes" : "Live customer ratings";
-  if (disclosure) {
-    disclosure.textContent = summary.sample
-      ? "Sample review content is clearly labeled and is not included in product ratings."
-      : "Score and distribution are calculated from live product ratings.";
-  }
-
-  breakdown.innerHTML = summary.counts.map(({ star, count: starCount, pct }) => `
-    <div class="home-rating-row">
-      <span>${star} star</span>
-      <i aria-hidden="true"><b style="width:${pct}%"></b></i>
-      <em>${starCount}</em>
-    </div>`).join("");
-
-  grid.innerHTML = summary.reviews.slice(0, 3).map((review) => {
-    const rating = Math.max(1, Math.min(5, Math.round(review.rating || 0)));
-    const label = `${rating} out of 5 stars`;
-    const initials = String(review.name || "Fashioni customer")
-      .split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
-    const body = review.body || `Customer rating for ${review.name || "a Fashioni product"}.`;
-    const meta = [summary.sample ? "Sample review" : "Live product rating", review.city].filter(Boolean).join(" · ");
-    return `<article class="home-review-card">
-      <div class="home-review-card__top"><span class="home-review-quote" aria-hidden="true">“</span><span class="review-stars" role="img" aria-label="${label}">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</span></div>
-      <p>${esc(body)}</p>
-      <footer><span class="home-review-avatar" aria-hidden="true">${esc(initials || "DC")}</span><span><b>${esc(review.name || "Fashioni customer")}</b><small>${esc(meta)}</small></span></footer>
-    </article>`;
+function renderVendors(catalog, publicVendors) {
+  const grid = document.querySelector("[data-vendor-cards]");
+  if (!grid) return;
+  const publicById = new Map(publicVendors.map((vendor) => [Number(vendor.id), vendor]));
+  grid.innerHTML = Object.values(MARKETPLACE_VENDORS).map((fallback) => {
+    const vendor = { ...fallback, ...(publicById.get(fallback.id) || {}) };
+    const products = catalog.products.filter((product) => product.vendorSlug === fallback.slug);
+    return `<article class="market-vendor market-vendor--${fallback.accent}"><div class="market-vendor__copy"><p>${esc(fallback.eyebrow)}</p><h3>${esc(vendor.name)}</h3><span>${esc(vendor.description || fallback.description)}</span><b>${products.length} products · ${new Set(products.map((product) => product.cat)).size} departments</b><a href="vendor.html?vendor=${fallback.slug}">Shop this seller</a></div><div class="market-vendor__art">${products.slice(0, 4).map((product) => `<img src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy" width="280" height="280">`).join("")}</div></article>`;
   }).join("");
 }
 
-initCampaigns();
+function renderRails(catalog) {
+  const alio = catalog.products.filter((product) => product.vendorSlug === "alio" && product.qty > 0);
+  const merino = catalog.products.filter((product) => product.vendorSlug === "merino" && product.qty > 0);
+  const arrivals = document.getElementById("arrivals");
+  if (arrivals) arrivals.innerHTML = interleave(alio, merino, 12).map(cardHTML).join("");
+  const deals = document.querySelector("[data-market-deals]");
+  if (deals) {
+    const discounted = catalog.products.filter((product) => product.was && product.qty > 0);
+    const rows = (discounted.length >= 8 ? discounted : interleave(merino.slice(12), alio.slice(12), 10)).slice(0, 10);
+    deals.innerHTML = rows.map(cardHTML).join("");
+  }
+}
 
-Promise.all([
-  loadCatalog(),
-  loadTaggedProductIds("trending"),
-  loadTaggedProductIds("best-seller"),
-])
-  .then(([catalog, trendingIds, bestSellerIds]) => fillHome(catalog, { trendingIds, bestSellerIds }))
-  .catch((error) => {
-    console.error(error);
-    const message = document.querySelector("[data-catalog-error]");
-    if (message) {
-      message.hidden = false;
-      message.textContent = "The live catalog could not be loaded. Please try again shortly.";
-    }
-  });
+function renderAudience(catalog) {
+  const grid = document.querySelector("[data-audience-grid]");
+  if (!grid) return;
+  grid.innerHTML = catalog.audiences.filter((audience) => audience.count > 0).slice(0, 5).map((audience) => `<a href="shop.html?audience=${audience.slug}"><img src="${esc(audience.image)}" alt="${esc(audience.title)}" loading="lazy" width="420" height="420"><span><b>${esc(audience.title)}</b><small>${audience.count} products</small></span></a>`).join("");
+}
+
+Promise.all([loadCatalog(), loadVendors().catch(() => [])]).then(([catalog, vendors]) => {
+  renderHero(catalog); renderCategories(catalog); renderVendors(catalog, vendors); renderRails(catalog); renderAudience(catalog);
+  document.querySelectorAll("[data-product-total]").forEach((element) => { element.textContent = catalog.products.length; });
+}).catch((error) => {
+  console.error(error);
+  const message = document.querySelector("[data-catalog-error]");
+  if (message) { message.hidden = false; message.textContent = "The live catalog could not be loaded. Please try again shortly."; }
+});

@@ -1,4 +1,4 @@
-/* Fashioni buying guide listing. Category filtering is server-side via ?category=<id>, which
+/* Marko buying guide listing. Category filtering is server-side via ?category=<id>, which
    the list endpoint documents; the chips below reflect the real category list
    and its real per-category counts. */
 import { loadBlog } from "./shop-data.js";

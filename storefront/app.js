@@ -1,4 +1,4 @@
-/* Fashioni — storefront UI.
+/* Marko — storefront UI.
    Ported from design-reference/app.js. Behaviour is the prototype's; the data
    behind it is live Selldone, including customer login and checkout hand-off. */
 
@@ -56,27 +56,27 @@ function startSaleCountdowns() {
    pages still carry equivalent static markup as a no-JS fallback; this
    replacement runs before any header behavior is wired, so the live interface
    is identical everywhere and future chrome changes have one source. */
-const SHARED_HEADER_HTML = `<header class="hdr fashioni-header" data-shared-chrome="v2">
-  <div class="topbar"><span class="topbar__long" data-announce-long>Fresh fashion · Easy discovery · Secure checkout</span><span class="topbar__short" data-announce-short>Fresh fashion · Secure checkout</span></div>
-  <div class="wrap hdr__in fashioni-primary">
-    <button class="header-search" type="button" data-open="search" aria-label="Search products"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg><span>Search for products, brands and categories</span></button>
-    <a class="logo fashioni-logo" href="index.html" aria-label="Fashioni home">FASHIO<span>NI</span></a>
+const SHARED_HEADER_HTML = `<header class="hdr fashioni-header market-header" data-shared-chrome="v3">
+  <div class="topbar"><span class="topbar__long" data-announce-long>Free pickup · Easy returns · Secure checkout</span><span class="topbar__short" data-announce-short>Easy returns · Secure checkout</span></div>
+  <div class="market-primary">
+    <a class="logo market-logo" href="index.html" aria-label="Marko home">marko<span aria-hidden="true">✦</span></a>
+    <a class="market-location" href="shop.html"><small>How do you want your items?</small><b>Delivery or pickup</b></a>
+    <button class="header-search" type="button" data-open="search" aria-label="Search everything at Marko"><span>Search everything at Marko</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg></button>
     <div class="hdr__tools"><div class="hdr__act">
-      <button class="iconbtn" type="button" data-open="account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></button>
+      <button class="iconbtn market-account" type="button" data-open="account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span><small>Sign in</small><b>Account</b></span></button>
       <button class="iconbtn" type="button" data-open="cart" aria-label="Open bag, 0 items"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cartdot" data-cart-count hidden>0</span></button>
-      <a class="header-checkout" href="checkout.html">Checkout</a>
     </div></div>
   </div>
-  <div class="fashioni-navrow"><nav class="nav audience-nav" aria-label="Main">
-    <a href="shop.html">All Products</a><a href="shop.html?audience=girls">Girls</a><a href="shop.html?audience=boys">Boys</a><a href="shop.html?audience=baby">Baby</a><a href="shop.html?audience=women">Women</a><a href="shop.html?audience=men">Men</a><a href="brands.html" data-nav-brands>Brands</a>
+  <div class="fashioni-navrow market-navrow"><nav class="nav audience-nav" aria-label="Main">
+    <a class="market-departments" href="shop.html">☰ Departments</a><a href="shop.html">All Products</a><a href="vendor.html?vendor=alio">Fashion</a><a href="vendor.html?vendor=merino">Electronics</a><a href="shop.html?audience=women">Women</a><a href="shop.html?audience=men">Men</a><a href="shop.html?audience=kids">Kids</a><a href="vendors.html">Sellers</a><a href="brands.html" data-nav-brands>Brands</a>
   </nav><div class="mega"><div class="mega__grid" id="megagrid"></div></div></div>
 </header>`;
 
-const SHARED_FOOTER_HTML = `<footer class="ft ink"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo fashioni-logo">FASHIO<span>NI</span></p><p class="lede" data-brand-tagline>Style for every move.</p><p class="demonote"></p><div class="ft__socials" aria-label="Social media"><span role="img" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1" class="fill"/></svg></span><span role="img" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l12 14M18 5 6 19"/></svg></span><span role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="4"/><path d="m10 9 5 3-5 3Z" class="fill"/></svg></span><span role="img" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="9" width="3" height="10" class="fill"/><circle cx="5.5" cy="5.5" r="1.7" class="fill"/><path d="M11 19v-6c0-2 1.2-3.2 3.1-3.2 2 0 3 1.3 3 3.4V19M11 10v9"/></svg></span></div></div><div class="ft__col"><h4>Categories</h4><ul data-collections></ul></div><div class="ft__col"><h4>Help</h4><ul><li><a href="/about-us">About Fashioni</a></li><li><a href="/blog">Style notes</a></li><li><a href="/terms#delivery">Shipping</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div><div class="ft__col"><h4>Policies</h4><ul><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/terms#warranty">Warranty</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Fashioni · Style for every move.</span><span class="ft__payments" aria-label="Accepted payment methods"><span class="ft__payment ft__payment--visa" role="img" aria-label="Visa">VISA</span><span class="ft__payment ft__payment--mastercard" role="img" aria-label="Mastercard"><i></i><i></i></span><span class="ft__payment ft__payment--amex" role="img" aria-label="American Express">AMEX</span></span></div></div></footer>`;
+const SHARED_FOOTER_HTML = `<footer class="ft ink market-footer"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo market-logo">marko<span>✦</span></p><p class="lede" data-brand-tagline>Everything you need, from people you can trust.</p></div><div class="ft__col"><h4>Departments</h4><ul data-collections></ul></div><div class="ft__col"><h4>Marketplace</h4><ul><li><a href="vendors.html">Meet our sellers</a></li><li><a href="vendor.html?vendor=alio">Shop Alio</a></li><li><a href="vendor.html?vendor=merino">Shop Merino</a></li><li><a href="brands.html">Shop brands</a></li></ul></div><div class="ft__col"><h4>Customer care</h4><ul><li><a href="/about-us">About Marko</a></li><li><a href="/terms#delivery">Delivery</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Marko Marketplace</span><span>Secure commerce by Selldone</span></div></div></footer>`;
 
 const SHARED_OVERLAYS_HTML = `<div class="drawer ink" role="dialog" aria-modal="true" aria-label="Menu" aria-hidden="true"><div class="drawer__top"><span class="eyebrow">Menu</span><button class="xbtn" type="button" data-close>Close</button></div><nav data-drawer-nav aria-label="Mobile"></nav></div>
 <aside class="cart" role="dialog" aria-modal="true" aria-label="Shopping bag" aria-hidden="true"><div class="cart__hd"><span class="eyebrow mb0" data-cart-label>Your bag · 0</span><button class="xbtn" type="button" data-close>Close</button></div><div class="cart__body" data-cart-body></div><div class="cart__ft" data-cart-foot hidden><div class="sum__tot"><span class="eyebrow mb0">Subtotal</span><span class="price" data-cart-total>$0</span></div><a class="btn btn--full" href="checkout.html">Checkout</a><p class="cap center">Delivery, taxes, and payment are confirmed by Selldone.</p></div></aside>
-<aside class="sheet sheet--search" role="dialog" aria-modal="true" aria-label="Search products" aria-hidden="true"><div class="sheet__hd"><span class="eyebrow mb0">Search Fashioni</span><button class="xbtn" type="button" data-close>Close</button></div><div class="sheet__pad"><label class="sr" for="q">Search products</label><input id="q" type="search" autocomplete="off" placeholder="Product, brand, or category" data-search-input data-autofocus /><p class="cap" data-search-count></p></div><div class="sheet__body" data-search-results></div></aside>
+<aside class="sheet sheet--search" role="dialog" aria-modal="true" aria-label="Search products" aria-hidden="true"><div class="sheet__hd"><span class="eyebrow mb0">Search Marko</span><button class="xbtn" type="button" data-close>Close</button></div><div class="sheet__pad"><label class="sr" for="q">Search products</label><input id="q" type="search" autocomplete="off" placeholder="Product, brand, or category" data-search-input data-autofocus /><p class="cap" data-search-count></p></div><div class="sheet__body" data-search-results></div></aside>
 <aside class="sheet sheet--account" role="dialog" aria-modal="true" aria-label="Account" aria-hidden="true"><div class="sheet__hd"><span class="eyebrow mb0">Account</span><button class="xbtn" type="button" data-close>Close</button></div><div class="sheet__body" data-account-body></div></aside>
 <div class="scrim"></div>`;
 
@@ -84,7 +84,7 @@ function initSharedChrome() {
   document.querySelector(".page")?.classList.add("fashioni-page");
 
   const header = document.querySelector("header.hdr,header.cohdr");
-  if (header && header.dataset.sharedChrome !== "v2") {
+  if (header && header.dataset.sharedChrome !== "v3") {
     header.outerHTML = SHARED_HEADER_HTML;
   }
 
@@ -107,11 +107,11 @@ export function cardHTML(p) {
   return `<article class="pcard${saleBadge ? " has-timed-sale" : ""}" data-card-product="${p.id}">
     <a class="pcard__link" href="product.html?id=${p.id}">
       <div class="pcard__art">
-        <span class="pcard__badge">${p.raw?.created_at ? "New in" : "Fashioni"}</span>
+        <span class="pcard__badge">${p.raw?.created_at ? "New in" : "Marko"}</span>
         ${saleBadge}
         <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" width="500" height="500" data-card-image>
       </div>
-      <p class="pcard__meta">${esc(p.brand || p.catName)}</p>
+      <p class="pcard__meta">${p.vendorName ? `Sold by ${esc(p.vendorName)}` : esc(p.brand || p.catName)}</p>
       <span class="pcard__name">${esc(p.name)}</span>
       <p class="price mb0 pcard__price">${p.was ? `<s>${money(p.was)}</s>` : ""}<span class="price__now">${p.range?.varies ? `<span class="price__from">from</span> ${money(p.range.from)}` : money(p.price)}</span></p>
     </a>
@@ -487,6 +487,7 @@ function fillNav() {
       `<a href="shop.html?audience=${a.slug}">${esc(a.title)}<small>${a.count} products</small></a>`).join("") +
       CAT.cats.map((c) =>
         `<a href="shop.html?cat=${c.slug}">${esc(c.name)}<small>${c.count} products · from ${money(c.from)}</small></a>`).join("") +
+      `<a href="vendors.html">Sellers<small>Alio fashion · Merino technology</small></a>` +
       `<a href="brands.html">Brands<small>${CAT.brands.length} brands</small></a>` +
       `<a href="/contact-us">Customer support</a>`;
   });
@@ -669,7 +670,7 @@ function initSearch() {
 
 /* ---------- Account ---------- */
 /* Authorization Code + PKCE, public client. Customer-facing copy never names
-   Selldone: the customer is signing in to Fashioni. Selldone is our
+   Selldone: the customer is signing in to Marko. Selldone is our
    infrastructure, not the shop's brand.
 
    Nothing raw is ever shown to a visitor. A failure gets a plain sentence here

@@ -1,15 +1,16 @@
 {
   "schemaVersion": 1,
-  "starterVersion": 2,
-  "id": "selldone-fashion-storefront-fashioni-v2",
-  "repository": "https://github.com/alireza-selldone/selldone-fashioni.git",
+  "starterVersion": 1,
+  "id": "selldone-marketplace-marko-v1",
+  "repository": "https://github.com/alireza-selldone/selldone-marko-marketplace.git",
   "branch": "main",
   "requiredDesignMarkers": [
-    "storefront/index.html::best-seller-section",
-    "storefront/app.js::sale-countdown",
-    "storefront/product.js::size-guide-sheet",
-    "storefront/home.js::bestSellerCardHTML",
-    "storefront/styles.css::best-seller-track"
+    "storefront/index.html::market-hero",
+    "storefront/app.js::market-header",
+    "storefront/product.js::product-seller",
+    "storefront/home.js::MARKETPLACE_VENDORS",
+    "storefront/vendor.html::vendor-hero",
+    "storefront/styles.css::Marko marketplace"
   ],
   "forbiddenDesignMarkers": [
     "class=\"rail",

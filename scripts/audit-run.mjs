@@ -15,14 +15,17 @@ const AUDIT_SRC = readFileSync(
    as well as the local dev server: node scripts/audit-run.mjs https://… */
 
 const BASE = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
-const PAGES=[["home","/","#catgrid .cat"],["shop","/shop.html","#pgrid .pcard"],
-             ["product","/product.html?id=710152","#pdp h1"],["checkout","/checkout.html","#sumrows .sum__row"],
+const PAGES=[["home","/","#catgrid .market-cat"],["shop","/shop.html","#pgrid .pcard"],
+             ["product","/product.html?id=711002","#pdp h1"],["checkout","/checkout.html","#sumrows .sum__row"],
              ["about","/about-us",".prose h2"],["terms","/terms",".prose h2"],
              ["privacy","/privacy",".prose h2"],["contact","/contact-us",".prose h2"],
              ["blog","/blog",".post"],["article","/article.html?id=31667","[data-article-body] p"],
-             ["brands","/brands.html",".brand-directory a"]];
+             ["brands","/brands.html",".brand-directory a"],
+             ["sellers","/vendors.html","[data-vendor-directory] article"],
+             ["alio","/vendor.html?vendor=alio","[data-vendor-products] .pcard"],
+             ["merino","/vendor.html?vendor=merino","[data-vendor-products] .pcard"]];
 const WIDTHS=[1440,1024,768,390];
-const BAG=JSON.stringify([{id:710152,qty:1,variantId:1401322},{id:710265,qty:1}]);
+const BAG=JSON.stringify([{id:711002,qty:1,variantId:1406480}]);
 const b=await chromium.launch();
 let allPass=true; const rows=[];
 

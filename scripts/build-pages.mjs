@@ -44,7 +44,7 @@ for (const [k, v] of Object.entries(TOKENS)) if (!v) delete TOKENS[k];
 const UNFILLED = new Set(["SHOP_EMAIL", "SHOP_PHONE", "SHOP_ADDRESS", "COMPANY_REGISTRATION"]);
 
 const PAGES = {
-  "about-us": ["About Fashioni", "How Fashioni organises its fashion catalogue and helps customers choose with confidence."],
+  "about-us": ["About Marko", "How Marko organises its fashion catalogue and helps customers choose with confidence."],
   terms: ["Client care", "Terms and conditions covering orders, prices, delivery, returns and warranty."],
   privacy: ["Client care", "What personal information this shop collects, why, and how to have it removed."],
   "contact-us": ["Client care", "How to reach us, what to include, and how long a reply takes."],
@@ -130,7 +130,10 @@ function chrome() {
   const head = rawHead.replace(/[ \t]*<script type="module" src="home\.js"><\/script>\r?\n/, "");
   if (head === rawHead) throw new Error("home.js script tag not found in index.html head — refusing to emit pages that would load it");
   // #service is a homepage section; from another page the link needs the page.
-  const top = src.slice(src.indexOf("  <body>"), src.indexOf('<main id="main"')).replaceAll('href="#service"', 'href="index.html#service"');
+  const bodyStart = src.search(/  <body\b/);
+  const mainStart = src.indexOf('<main id="main"');
+  if (bodyStart < 0 || mainStart < 0) throw new Error("index.html body or main marker not found");
+  const top = src.slice(bodyStart, mainStart).replaceAll('href="#service"', 'href="index.html#service"');
   return { head, top, tail: src.slice(src.indexOf("      </main>")) };
 }
 
@@ -172,7 +175,7 @@ ${body}
 
 /* Brands is data-driven rather than Markdown-driven, but it uses the exact same
    generated chrome. The directory works for a one-brand merchant or a large
-   catalogue without baking Fashioni's current brand names into the page. */
+   catalogue without baking Marko's current brand names into the page. */
 const brandsHead = `${head
   .replace(/<title>.*?<\/title>/, `<title>Shop by brand — ${TOKENS.SHOP_NAME || ""}</title>`)
   .replace(/(name="description"\s*\n\s*content=)"[^"]*"/, `$1"Browse every brand available at ${TOKENS.SHOP_NAME || "this store"}."`)}    <script type="module" src="brands.js"></script>\n`;

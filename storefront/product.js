@@ -1,4 +1,4 @@
-/* Fashioni product detail: live Selldone facts, accessible apparel options,
+/* Marko product detail: live Selldone facts, accessible apparel options,
    and deterministic variant-to-gallery behavior. */
 
 import {
@@ -102,11 +102,11 @@ async function initPDP(cat) {
       <p class="h1" style="margin-bottom:14px">Product not found</p>
       <p class="lede" style="margin:0 auto 28px">${id ? `Product ${esc(id)} is not in the catalog.` : "No product was requested."}</p>
       <a class="btn" href="shop.html">Browse all products</a></div>`;
-    document.title = "Product not found — Fashioni";
+    document.title = "Product not found — Marko";
     return;
   }
 
-  document.title = `${p.name} — Fashioni`;
+  document.title = `${p.name} — Marko`;
   const c = catOf(cat, p.cat);
   const others = cat.products.filter((x) => x.cat === p.cat && x.id !== p.id);
 
@@ -167,6 +167,7 @@ async function initPDP(cat) {
       <p class="eyebrow eyebrow--blued mb0">${esc(c.name)}</p>
       <h1 class="h1">${esc(p.name)}</h1>
       <p class="ref">REF. ${p.id}${p.brand ? ` &middot; ${esc(p.brand.toUpperCase())}` : ""}</p>
+      ${p.vendorName ? `<a class="product-seller" href="vendor.html?vendor=${esc(p.vendorSlug)}"><span>${esc(p.vendorName.slice(0, 1))}</span><small>Sold by</small><b>${esc(p.vendorName)}</b><em>Visit seller →</em></a>` : ""}
 
       <p class="price" style="font-size:24px;margin:22px 0 0" data-price>${money(selectedVariant ? priceOf(selectedVariant) : p.price)}${p.was ? `<s>${money(p.was)}</s>` : ""}</p>
       <p class="cap" style="margin-top:6px">Duties and taxes calculated at checkout</p>
