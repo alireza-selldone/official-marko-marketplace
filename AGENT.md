@@ -126,9 +126,13 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   with a product or category id in it. `resolveStoryHref()` turns that into a
   route the live catalog can actually serve, falling back to `shop.html`.
 - Promotional cutouts must genuinely cut out. `removePromoImageBackground`
-  reports how much it cleared, and a tile whose photograph will not separate
-  from its backdrop swaps in the next ranked product from the same department.
-  Do not "fix" a failed cutout with a white card behind it — that is banned.
+  reports how much it cleared, crops to the subject's own bounding box so tiles
+  agree on scale, and a tile whose photograph will not separate from its
+  backdrop swaps in the next ranked product from the same department. Do not
+  "fix" a failed cutout with a white card behind it — that is banned.
+- A panel that is only translated off screen is still painted and still in the
+  tab order. `.drawer`, `.cart` and `.sheet` carry `visibility:hidden` when
+  closed, with the transition delayed so the slide-out still animates.
 - Dashboard UI should be English.
 - Rear-angle apparel photography is permanently banned from every promotional
   placement. Products may remain in ordinary listings and their PDP, but all
@@ -136,15 +140,29 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   `isPromotionSafeProduct()` / `promotionSafeProducts()` from
   `storefront/shop-data.js`. Prefer excluding a questionable product to
   resurfacing rear-angle imagery.
-- The homepage Featured Departments promo grid uses five live categories with at
-  least one technology tile when the catalog supplies one. Headlines and price
-  claims come from live catalog data; eyebrows do not repeat; exactly one tile
-  has a pill CTA. Tile backgrounds are flat solids and product cutouts have no
-  rotation, white paper cards, decorative circles, gradients, or shadows.
-  `npm run check:bento -- <url>` is the acceptance check and writes 1440px and
-  375px section screenshots to `artifacts/qa/`. Copy and product art occupy
-  separate grid tracks, so the 24px copy clearance is a property of the layout
-  rather than of hand-tuned offsets.
+- The homepage promotional grid has TWO modes and `shop.config.json` decides
+  which. Four square tiles and one portrait: the lead tile is 4/10 columns
+  across two rows, which lands near 2:3 and takes a portrait asset uncropped.
+  - **editorial** — `promoTiles` names a `{category, image, alt, focus}` per
+    tile. The photograph fills the tile (`object-fit:cover`), the copy is
+    reversed out over a scrim at the foot, and the tile field is dark so
+    reversed type stays legible while the image loads. This is what Marko
+    ships, and it is why the tiles stopped being a small cutout adrift in a
+    coloured field. Artwork is editorial, shipped in `storefront/assets/promo/`
+    and optimised to WebP; the HEADLINE and price hook still come from the live
+    catalog, so the picture is styling and the claim is data.
+  - **catalog** — no artwork configured. Tiles fall back to a cut-out product
+    from their own department on a flat solid field, with no rotation, paper
+    card, gradient or shadow, and 24px of clearance from the copy. A clone that
+    keeps the code but not the artwork lands here, so do not delete it.
+  Both modes: five tiles, at least one technology tile when the catalog has
+  one, unique eyebrows, a live price hook in every headline, one pill CTA, and
+  no vendor names. `npm run check:bento -- <url>` detects the mode and asserts
+  the right set, writing 1440px and 375px screenshots to `artifacts/qa/`.
+- Promotional artwork is reviewed by eye before it ships. The rear-angle
+  apparel ban covers editorial photography as well as catalog cutouts, and the
+  check reads the image `alt` for it — so an accurate `alt` is a safety
+  control, not just an accessibility one.
 - Every activatable target is at least 44x44 (WCAG 2.5.5). Section 15 of the
   stylesheet holds those rules in one place. `.sdbar` and `.market-footer` are
   held to the 2.5.8 AA floor of 24px instead, which the audit encodes.

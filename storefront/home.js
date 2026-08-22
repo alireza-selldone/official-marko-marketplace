@@ -173,7 +173,50 @@ async function removePromoImageBackground(image) {
       if (y + 1 < height) enqueue(index + width);
     }
     context.putImageData(frame, 0, 0);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", .92));
+
+    /* Crop to the product's own bounding box. Catalog photographs each carry a
+       different amount of baked-in margin around the subject, so an uncropped
+       cutout is mostly transparent padding: the tile reserves a large area and
+       the product still renders small, and no two tiles agree on scale. With
+       the box trimmed, `contain` sizes the actual product against the tile. */
+    /* Measured per row and per column rather than from the first opaque pixel.
+       A studio shot often leaves a hairline of reflection or shadow that the
+       fill cannot reach, and a single surviving pixel would otherwise define
+       the edge — cropping to nothing and dragging the artefact into view. A
+       row has to carry a real slice of the subject to count as its edge. */
+    const rowCounts = new Uint32Array(height);
+    const colCounts = new Uint32Array(width);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (pixels[(y * width + x) * 4 + 3] > 24) { rowCounts[y]++; colCounts[x]++; }
+      }
+    }
+    const edge = (counts, span) => {
+      const floor = Math.max(2, Math.round(span * .012));
+      let lo = 0;
+      let hi = counts.length - 1;
+      while (lo < counts.length && counts[lo] < floor) lo++;
+      while (hi >= 0 && counts[hi] < floor) hi--;
+      return [lo, hi];
+    };
+    const [minY, maxY] = edge(rowCounts, width);
+    const [minX, maxX] = edge(colCounts, height);
+    let output = canvas;
+    if (maxX >= minX && maxY >= minY) {
+      const boxWidth = maxX - minX + 1;
+      const boxHeight = maxY - minY + 1;
+      /* Only worth doing when there is real margin to remove; re-encoding an
+         already-tight cutout would cost a canvas for nothing. */
+      if (boxWidth < width * .97 || boxHeight < height * .97) {
+        const cropped = document.createElement("canvas");
+        cropped.width = boxWidth;
+        cropped.height = boxHeight;
+        cropped.getContext("2d").drawImage(canvas, minX, minY, boxWidth, boxHeight, 0, 0, boxWidth, boxHeight);
+        output = cropped;
+      }
+    }
+
+    const blob = await new Promise((resolve) => output.toBlob(resolve, "image/webp", .92));
     if (!blob) throw new Error("Promo cutout conversion failed");
     /* Completing the pass is not the same as succeeding at it. A photograph
        shot against a dark or textured backdrop clears almost nothing, and the
@@ -359,7 +402,10 @@ function renderDepartments(groups) {
    tile carries one deliberately chosen subject rather than a scatter of
    cutouts. Headlines take their price hook from the live catalog. */
 const mosaicEyebrows = ["Picked for today", "Just in", "Smart value", "Trending now", "More to explore"];
-const POSTER_COUNTS = [2, 1, 1, 1, 1];
+/* One subject per tile. A pair on the tall tile read as two products dropped in
+   at unrelated scales rather than as a composition, so every tile now carries a
+   single deliberate hero. */
+const POSTER_COUNTS = [1, 1, 1, 1, 1];
 
 function chooseMosaicGroups(groups) {
   const tech = groups.filter(isTechGroup);
@@ -380,10 +426,17 @@ function chooseMosaicGroups(groups) {
   return chosen.slice(0, 5);
 }
 
-/* Department name on one line, live price hook on the next. A single
-   consistent construction reads as a designed system rather than five
-   differently-phrased sentences, and it keeps every tile to two short lines
-   whatever the department is called. The price is always live. */
+/* When the shop configures promotional artwork, the tiles follow the order and
+   the departments named there. Anything the live catalog cannot serve is
+   dropped, so a clone that keeps the config but changes the catalog degrades
+   to the automatic selection instead of linking to a department it lacks. */
+function configuredMosaicTiles(catalog, groups) {
+  const configured = Array.isArray(catalog?.cfg?.promoTiles) ? catalog.cfg.promoTiles : [];
+  return configured
+    .map((tile) => ({ tile, group: groups.find((group) => group.slug === tile.category) }))
+    .filter((row) => row.group && row.tile.image);
+}
+
 function mosaicHeadline(group) {
   const livePrices = group.products
     .map((product) => Number(product.range?.from || product.price))
@@ -392,32 +445,53 @@ function mosaicHeadline(group) {
   return `${esc(group.name)}${from ? `<em>from ${esc(from)}</em>` : ""}`;
 }
 
-function renderMosaic(groups) {
+const mosaicCopy = (group, index) => `
+  <span class="home-promo-card__copy">
+    <small>${esc(mosaicEyebrows[index])}</small>
+    <h3>${mosaicHeadline(group)}</h3>
+    <span class="${index === 0 ? "home-promo-card__cta home-promo-card__cta--pill" : "home-promo-card__cta"}">Shop now</span>
+  </span>`;
+
+const mosaicTileOpen = (group, index) =>
+  `<a class="home-promo-card home-promo-card--${index + 1}" data-bento-tile data-bento-tech="${isTechGroup(group)}" href="shop.html?cat=${encodeURIComponent(group.slug)}">`;
+
+/* Configured artwork fills the whole tile. The subject is the tile, not an
+   object placed inside one, which is what the cutout tiles could never be:
+   a catalog cutout is only ever as large as the transparent box around it. */
+function editorialTile({ tile, group }, index) {
+  return `${mosaicTileOpen(group, index)}
+    <img class="home-promo-card__art" src="${esc(tile.image)}" alt="${esc(tile.alt || "")}" style="object-position:${esc(tile.focus || "50% 50%")}" loading="${index === 0 ? "eager" : "lazy"}" width="900" height="900">
+    <span class="home-promo-card__veil" aria-hidden="true"></span>
+    ${mosaicCopy(group, index)}
+  </a>`;
+}
+
+/* Fallback for a shop with no promotional artwork configured: the department's
+   own live imagery, cut out so it does not sit on a white rectangle. */
+function catalogTile(group, index) {
+  const product = group.products[0];
+  const alternates = group.products.slice(1, 5).map((row) => ({ src: row.image, name: row.name }));
+  return `${mosaicTileOpen(group, index)}
+    <span class="home-poster-art" aria-hidden="true">
+      <img class="home-poster-product home-poster-product--1" data-promo-product data-promo-name="${esc(product.name)}" data-promo-alts="${esc(JSON.stringify(alternates))}" crossorigin="anonymous" src="${esc(product.image)}" alt="" loading="eager" fetchpriority="low" width="680" height="560">
+    </span>
+    ${mosaicCopy(group, index)}
+  </a>`;
+}
+
+function renderMosaic(catalog, groups) {
   const root = document.querySelector("[data-home-mosaic]");
   if (!root) return;
+  const editorial = configuredMosaicTiles(catalog, groups);
+  if (editorial.length >= 5) {
+    root.dataset.mosaicMode = "editorial";
+    root.innerHTML = editorial.slice(0, 5).map(editorialTile).join("");
+    return;
+  }
   const chosen = chooseMosaicGroups(groups);
   if (chosen.length < 5) { dropModule(root); return; }
-  root.innerHTML = chosen.map((group, index) => {
-    const posterCount = POSTER_COUNTS[index];
-    const posterProducts = group.products.slice(0, posterCount);
-    /* Reserve the rest of the department as cutout fallbacks, so a photograph
-       that will not separate from its backdrop can be replaced at runtime.
-       Each poster gets its own slice so a tile with two subjects cannot fall
-       back to the same product twice. */
-    const alternatesFor = (posterIndex) => group.products
-      .slice(posterCount + posterIndex * 4, posterCount + posterIndex * 4 + 4)
-      .map((product) => ({ src: product.image, name: product.name }));
-    const ctaClass = index === 0 ? "home-promo-card__cta home-promo-card__cta--pill" : "home-promo-card__cta";
-    return `<a class="home-promo-card home-promo-card--${index + 1}" data-bento-tile data-bento-tech="${isTechGroup(group)}" href="shop.html?cat=${encodeURIComponent(group.slug)}">
-      <div class="home-promo-card__copy">
-        <small>${esc(mosaicEyebrows[index])}</small>
-        <h3>${mosaicHeadline(group)}</h3>
-        <span class="${ctaClass}">Shop now</span>
-      </div>
-      <span class="home-poster-art" aria-hidden="true">${posterProducts.map((product, productIndex) =>
-        `<img class="home-poster-product home-poster-product--${productIndex + 1}" data-promo-product data-promo-name="${esc(product.name)}" data-promo-alts="${esc(JSON.stringify(alternatesFor(productIndex)))}" crossorigin="anonymous" src="${esc(product.image)}" alt="" loading="eager" fetchpriority="low" width="680" height="560">`).join("")}</span>
-    </a>`;
-  }).join("");
+  root.dataset.mosaicMode = "catalog";
+  root.innerHTML = chosen.map(catalogTile).join("");
   preparePromoCutouts(root);
 }
 
@@ -470,7 +544,7 @@ function renderMarketplaceModules(catalog, clearanceIds = new Set()) {
   if (!products.length || !groups.length) { renderCatalogUnavailable(catalog); return; }
   renderDepartments(groups);
   renderDeals(products, clearanceIds);
-  renderMosaic(groups);
+  renderMosaic(catalog, groups);
   renderLineup(groups, clearanceIds);
   renderBrandProducts(catalog, products, clearanceIds);
   renderSavings(groups, clearanceIds);

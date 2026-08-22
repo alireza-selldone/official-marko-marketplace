@@ -18,38 +18,165 @@
     "announcement": "Free pickup · Easy returns · Secure checkout"
   },
   "categories": [
-    { "id": 108853, "slug": "activewear", "blurb": "Performance layers and everyday movement." },
-    { "id": 108852, "slug": "footwear", "blurb": "Shoes for work, weekends, sport, and play." },
-    { "id": 108848, "slug": "dresses-and-one-pieces", "blurb": "One-piece looks for every plan." },
-    { "id": 108846, "slug": "tops-and-t-shirts", "blurb": "Everyday tops, tees, and tanks." },
-    { "id": 108847, "slug": "shorts", "blurb": "Comfortable shorts for every pace." },
-    { "id": 108849, "slug": "jackets-and-layers", "blurb": "Light layers and outerwear." },
-    { "id": 108850, "slug": "sunglasses", "blurb": "Frames for bright days and bold looks." },
-    { "id": 108851, "slug": "bags-and-accessories", "blurb": "Finishing touches and carry-everywhere bags." },
-    { "id": 108828, "slug": "laptop", "blurb": "Computing for work, study, and play." },
-    { "id": 108837, "slug": "monitors", "blurb": "Clear, productive desktop displays." },
-    { "id": 108830, "slug": "tvs", "blurb": "Big-screen entertainment at home." },
-    { "id": 108829, "slug": "microphones", "blurb": "Create, stream, and record clearly." },
-    { "id": 108831, "slug": "headphones", "blurb": "Personal audio for every day." },
-    { "id": 108834, "slug": "earbuds", "blurb": "Compact wireless listening." },
-    { "id": 108832, "slug": "digital-cameras", "blurb": "Capture everyday moments and adventures." },
-    { "id": 108841, "slug": "action-cameras", "blurb": "Rugged cameras for life in motion." },
-    { "id": 108833, "slug": "power-banks", "blurb": "Portable power wherever you go." },
-    { "id": 108842, "slug": "rv-power-stations", "blurb": "Reliable power for travel and backup." },
-    { "id": 108835, "slug": "flash-drives", "blurb": "Simple portable storage." },
-    { "id": 108836, "slug": "hard-drives", "blurb": "Extra space for important files." },
-    { "id": 108838, "slug": "printers", "blurb": "Practical printing for home and office." },
-    { "id": 108839, "slug": "keyboards", "blurb": "Comfortable control for every setup." },
-    { "id": 108840, "slug": "mice", "blurb": "Fast, precise pointing and play." }
+    {
+      "id": 108853,
+      "slug": "activewear",
+      "blurb": "Performance layers and everyday movement."
+    },
+    {
+      "id": 108852,
+      "slug": "footwear",
+      "blurb": "Shoes for work, weekends, sport, and play."
+    },
+    {
+      "id": 108848,
+      "slug": "dresses-and-one-pieces",
+      "blurb": "One-piece looks for every plan."
+    },
+    {
+      "id": 108846,
+      "slug": "tops-and-t-shirts",
+      "blurb": "Everyday tops, tees, and tanks."
+    },
+    {
+      "id": 108847,
+      "slug": "shorts",
+      "blurb": "Comfortable shorts for every pace."
+    },
+    {
+      "id": 108849,
+      "slug": "jackets-and-layers",
+      "blurb": "Light layers and outerwear."
+    },
+    {
+      "id": 108850,
+      "slug": "sunglasses",
+      "blurb": "Frames for bright days and bold looks."
+    },
+    {
+      "id": 108851,
+      "slug": "bags-and-accessories",
+      "blurb": "Finishing touches and carry-everywhere bags."
+    },
+    {
+      "id": 108828,
+      "slug": "laptop",
+      "blurb": "Computing for work, study, and play."
+    },
+    {
+      "id": 108837,
+      "slug": "monitors",
+      "blurb": "Clear, productive desktop displays."
+    },
+    {
+      "id": 108830,
+      "slug": "tvs",
+      "blurb": "Big-screen entertainment at home."
+    },
+    {
+      "id": 108829,
+      "slug": "microphones",
+      "blurb": "Create, stream, and record clearly."
+    },
+    {
+      "id": 108831,
+      "slug": "headphones",
+      "blurb": "Personal audio for every day."
+    },
+    {
+      "id": 108834,
+      "slug": "earbuds",
+      "blurb": "Compact wireless listening."
+    },
+    {
+      "id": 108832,
+      "slug": "digital-cameras",
+      "blurb": "Capture everyday moments and adventures."
+    },
+    {
+      "id": 108841,
+      "slug": "action-cameras",
+      "blurb": "Rugged cameras for life in motion."
+    },
+    {
+      "id": 108833,
+      "slug": "power-banks",
+      "blurb": "Portable power wherever you go."
+    },
+    {
+      "id": 108842,
+      "slug": "rv-power-stations",
+      "blurb": "Reliable power for travel and backup."
+    },
+    {
+      "id": 108835,
+      "slug": "flash-drives",
+      "blurb": "Simple portable storage."
+    },
+    {
+      "id": 108836,
+      "slug": "hard-drives",
+      "blurb": "Extra space for important files."
+    },
+    {
+      "id": 108838,
+      "slug": "printers",
+      "blurb": "Practical printing for home and office."
+    },
+    {
+      "id": 108839,
+      "slug": "keyboards",
+      "blurb": "Comfortable control for every setup."
+    },
+    {
+      "id": 108840,
+      "slug": "mice",
+      "blurb": "Fast, precise pointing and play."
+    }
   ],
   "audiences": [
-    { "id": 108854, "slug": "women", "title": "Women", "image": "assets/categories/women.png" },
-    { "id": 108855, "slug": "men", "title": "Men", "image": "assets/categories/men.png" },
-    { "id": 108856, "slug": "girls", "title": "Girls", "image": "assets/categories/girls.png" },
-    { "id": 108857, "slug": "boys", "title": "Boys", "image": "assets/categories/boys.png" },
-    { "id": 108858, "slug": "baby", "title": "Baby", "image": "assets/categories/baby.png" },
-    { "id": 108859, "slug": "baby-girls", "title": "Baby Girls", "image": "assets/categories/baby-girls.png" },
-    { "id": 108860, "slug": "baby-boys", "title": "Baby Boys", "image": "assets/categories/baby-boys.png" }
+    {
+      "id": 108854,
+      "slug": "women",
+      "title": "Women",
+      "image": "assets/categories/women.png"
+    },
+    {
+      "id": 108855,
+      "slug": "men",
+      "title": "Men",
+      "image": "assets/categories/men.png"
+    },
+    {
+      "id": 108856,
+      "slug": "girls",
+      "title": "Girls",
+      "image": "assets/categories/girls.png"
+    },
+    {
+      "id": 108857,
+      "slug": "boys",
+      "title": "Boys",
+      "image": "assets/categories/boys.png"
+    },
+    {
+      "id": 108858,
+      "slug": "baby",
+      "title": "Baby",
+      "image": "assets/categories/baby.png"
+    },
+    {
+      "id": 108859,
+      "slug": "baby-girls",
+      "title": "Baby Girls",
+      "image": "assets/categories/baby-girls.png"
+    },
+    {
+      "id": 108860,
+      "slug": "baby-boys",
+      "title": "Baby Boys",
+      "image": "assets/categories/baby-boys.png"
+    }
   ],
   "categoryHeroes": {
     "activewear": 711002,
@@ -105,5 +232,37 @@
     "email": null,
     "phone": null,
     "address": null
-  }
+  },
+  "promoTiles": [
+    {
+      "category": "footwear",
+      "image": "assets/promo/promo-footwear.webp",
+      "alt": "Sneaker on a pink studio backdrop",
+      "focus": "50% 50%"
+    },
+    {
+      "category": "activewear",
+      "image": "assets/promo/promo-activewear.webp",
+      "alt": "Man walking in a grey tracksuit on a coastal road",
+      "focus": "50% 38%"
+    },
+    {
+      "category": "dresses-and-one-pieces",
+      "image": "assets/promo/promo-dresses.webp",
+      "alt": "Woman wearing a navy knitted dress",
+      "focus": "50% 30%"
+    },
+    {
+      "category": "sunglasses",
+      "image": "assets/promo/promo-sunglasses.webp",
+      "alt": "Woman wearing cat-eye sunglasses",
+      "focus": "50% 28%"
+    },
+    {
+      "category": "digital-cameras",
+      "image": "assets/promo/promo-cameras.webp",
+      "alt": "Digital camera mounted on a tripod",
+      "focus": "50% 46%"
+    }
+  ]
 }

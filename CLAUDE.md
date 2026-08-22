@@ -29,6 +29,9 @@ architecture, API, security, deployment, and UI contract for this repository.
 - No vendor names in homepage hero or Featured Departments promotional copy.
 - Clearance labels only come from the real `clearance` product tag (Product
   Edit → Survey → Tags), never merely from a discount.
+- Homepage promotional artwork is chosen by the user and configured in
+  `shop.config.json` under `promoTiles`. Do not swap an image or re-point a
+  tile to another department without being asked.
 - Do not display product/category counts in customer-facing copy.
 
 ## Working method

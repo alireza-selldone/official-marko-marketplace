@@ -589,7 +589,7 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 .drawer{
   position:fixed;left:0;top:0;bottom:0;z-index:140;width:min(90vw,360px);
   padding:var(--s5);overflow:auto;background:var(--surface-inverse);color:#fff;
-  transform:translateX(-100%);transition:transform var(--mid) var(--ease);
+  transform:translateX(-100%);
 }
 .drawer.is-open{transform:none;}
 .drawer__top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s4);}
@@ -613,7 +613,7 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 .cart{
   position:fixed;right:0;top:0;bottom:0;z-index:140;display:flex;flex-direction:column;
   width:min(94vw,420px);background:var(--surface);
-  transform:translateX(100%);transition:transform var(--mid) var(--ease);
+  transform:translateX(100%);
 }
 .cart.is-open{transform:none;}
 .cart__hd{display:flex;align-items:center;justify-content:space-between;padding:var(--s5);border-bottom:1px solid var(--line);}
@@ -626,9 +626,21 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
   position:fixed;left:0;right:0;top:0;z-index:145;
   max-height:88vh;display:flex;flex-direction:column;background:var(--surface);
   border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--e3);
-  transform:translateY(-100%);transition:transform var(--mid) var(--ease);
+  transform:translateY(-100%);
 }
 .sheet.is-open{transform:none;}
+
+/* A panel that is only translated off screen is still painted and still in the
+   tab order, so a closed drawer, cart, sheet or filter tray could be reached
+   with the keyboard and turned up in element screenshots. `visibility` makes
+   it genuinely inert; the delay lets the slide-out finish before it goes. */
+.drawer,.cart,.sheet{
+  visibility:hidden;
+  transition:transform var(--mid) var(--ease),visibility 0s linear var(--mid);
+}
+.drawer.is-open,.cart.is-open,.sheet.is-open{
+  visibility:visible;transition:transform var(--mid) var(--ease),visibility 0s;
+}
 .sheet__hd{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);padding:var(--s5) var(--pad);border-bottom:1px solid var(--line);}
 .sheet__pad{padding:var(--s5) var(--pad);}
 .sheet__body{overflow:auto;padding:0 var(--pad) var(--s6);}
@@ -952,15 +964,19 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 
 /* ---------- Promotional grid ----------
-   Copy and product art occupy separate grid rows, so imagery keeps a
-   guaranteed clearance from the headline at every width. Tile fields are flat
-   solids; no gradient, photo background, rotation, paper card or drop shadow. */
+   Two modes, one grid. When the shop configures artwork the photograph fills
+   the tile and the copy sits over a scrim at the foot of it. With no artwork
+   configured the tile falls back to a cut-out product from the department on a
+   flat field, which is all a bare catalog can honestly offer.
+
+   Four square tiles and one vertical: the tall tile is 4/10 columns across two
+   rows, which lands at roughly 2:3 and matches a portrait asset without
+   cropping the subject out of it. */
 .home-promo-mosaic{
-  display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-auto-rows:318px;gap:var(--gap);
+  display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-auto-rows:340px;gap:var(--gap);
 }
 .home-promo-card,.home-skeleton-promo{
-  position:relative;display:grid;grid-template-rows:auto minmax(0,1fr);gap:var(--s6);
-  min-width:0;padding:var(--s5) var(--s6) 0;overflow:hidden;
+  position:relative;isolation:isolate;display:block;min-width:0;overflow:hidden;
   border-radius:var(--r-lg);background:var(--tile-5);color:var(--theme-ink);
 }
 .home-promo-card--1{grid-column:span 4;grid-row:span 2;background:var(--tile-1);}
@@ -968,35 +984,67 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 .home-promo-card--3{grid-column:span 3;background:var(--tile-3);}
 .home-promo-card--4{grid-column:span 3;background:var(--tile-4);}
 .home-promo-card--5{grid-column:span 3;background:var(--tile-5);}
-.home-promo-card__copy{position:relative;z-index:2;min-width:0;}
+
+/* Editorial mode: the photograph IS the tile. The field behind it is dark
+   rather than a pale tint, because the copy is reversed out over the scrim —
+   that keeps the contrast honest while the photograph is still loading, and
+   stops a light tile flashing behind reversed type. */
+[data-mosaic-mode="editorial"] .home-promo-card{background:var(--theme-ink);}
+
+.home-promo-card__art{
+  position:absolute;inset:0;z-index:0;width:100%;height:100%;
+  object-fit:cover;transition:transform var(--slow) var(--ease);
+}
+.home-promo-card:hover .home-promo-card__art{transform:scale(1.03);}
+.home-promo-card__veil{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(
+    0deg,
+    rgba(7,15,32,.88) 0%,
+    rgba(7,15,32,.68) 24%,
+    rgba(7,15,32,.28) 46%,
+    rgba(7,15,32,0) 68%
+  );
+}
+.home-promo-card__copy{
+  position:absolute;z-index:2;left:0;right:0;bottom:0;display:block;
+  padding:var(--s6);min-width:0;
+}
 .home-promo-card small{
   display:block;font-size:var(--t-xs);font-weight:800;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--theme-deep);
+  text-transform:uppercase;color:rgba(255,255,255,.82);
 }
 .home-promo-card h3{
-  margin:var(--s2) 0 var(--s4);max-width:16ch;
-  font-size:clamp(18px,1.6vw,23px);line-height:1.12;letter-spacing:-.03em;color:var(--theme-ink);
+  margin:var(--s2) 0 var(--s4);max-width:16ch;color:#fff;
+  font-size:clamp(19px,1.7vw,24px);line-height:1.1;letter-spacing:-.03em;
 }
 .home-promo-card h3 em{
-  display:block;margin-top:5px;font-size:.74em;font-style:normal;font-weight:700;
-  letter-spacing:-.01em;color:var(--theme-deep);
+  display:block;margin-top:5px;font-size:.78em;font-style:normal;font-weight:700;
+  letter-spacing:-.01em;color:rgba(255,255,255,.88);
 }
-.home-promo-card--1 h3{max-width:13ch;font-size:clamp(26px,2.5vw,38px);}
+.home-promo-card--1 h3{max-width:14ch;font-size:clamp(28px,2.7vw,40px);}
 .home-promo-card__cta{
   display:inline-flex;align-items:center;gap:6px;min-height:26px;
-  color:var(--theme-primary);font-size:var(--t-md);font-weight:700;
+  color:#fff;font-size:var(--t-md);font-weight:700;
   text-decoration:underline;text-underline-offset:4px;
 }
 .home-promo-card__cta--pill{
-  min-height:40px;padding:0 var(--s5);border-radius:var(--r-pill);
-  background:var(--theme-ink);color:#fff;text-decoration:none;
+  min-height:44px;padding:0 var(--s5);border-radius:var(--r-pill);
+  background:#fff;color:var(--theme-ink);text-decoration:none;
 }
-.home-promo-card:hover .home-promo-card__cta--pill{background:var(--theme-primary);}
-/* The art region runs to the tile's own edges so the subject stands on the
-   bottom of the tile instead of hovering above a band of padding. */
+.home-promo-card:hover .home-promo-card__cta--pill{background:var(--theme-soft);}
+
+/* Catalog fallback mode: cut-out product on the flat tile field, dark copy. */
+[data-mosaic-mode="catalog"] .home-promo-card{display:grid;grid-template-rows:auto minmax(190px,1fr);gap:var(--s6);padding:var(--s5) var(--s6) 0;}
+[data-mosaic-mode="catalog"] .home-promo-card__copy{position:relative;left:auto;right:auto;bottom:auto;padding:0;}
+[data-mosaic-mode="catalog"] .home-promo-card small{color:var(--theme-deep);}
+[data-mosaic-mode="catalog"] .home-promo-card h3{color:var(--theme-ink);}
+[data-mosaic-mode="catalog"] .home-promo-card h3 em{color:var(--theme-deep);}
+[data-mosaic-mode="catalog"] .home-promo-card__cta{color:var(--theme-primary);}
+[data-mosaic-mode="catalog"] .home-promo-card__cta--pill{background:var(--theme-ink);color:#fff;}
 .home-poster-art{
   position:relative;display:block;min-height:0;pointer-events:none;
-  margin:0 calc(var(--s6) * -1);
+  margin:0 calc(var(--s6) * -1) var(--s4);
 }
 .home-poster-product{
   position:absolute;display:block;object-fit:contain;
@@ -1004,27 +1052,31 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
   mix-blend-mode:multiply;opacity:0;transition:opacity var(--mid) var(--ease);
 }
 .home-poster-product[data-bg-status="removed"],.home-poster-product[data-bg-status="fallback"]{opacity:1;}
-/* One deliberate subject per tile, standing on the tile's own baseline and
-   centred in the space the copy leaves it. Not a scatter of cutouts. */
 .home-poster-product--1{left:0;right:0;bottom:0;width:100%;height:100%;object-position:bottom center;}
-/* The tall tile carries a considered pair — a lead subject and one supporting
-   piece at a smaller scale, sharing that baseline. */
-.home-promo-card--1 .home-poster-product--1{left:auto;right:2%;width:52%;height:100%;object-position:bottom right;}
-.home-promo-card--1 .home-poster-product--2{left:4%;right:auto;width:38%;height:72%;object-position:bottom left;}
+.home-promo-card--1 .home-poster-art{margin-inline:0;}
+.home-promo-card--1 .home-poster-product--1{left:4%;right:4%;width:92%;height:100%;object-position:bottom center;}
 
 @media (max-width:1180px){
-  .home-promo-mosaic{grid-auto-rows:224px;}
-  .home-promo-card--1{grid-column:span 12;grid-row:span 1;}
-  .home-promo-card--2,.home-promo-card--3,.home-promo-card--4,.home-promo-card--5{grid-column:span 6;}
-  .home-promo-card--1{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-items:center;}
-  .home-promo-card--1 .home-poster-product--1{width:58%;}
+  .home-promo-mosaic{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:320px;}
+  .home-promo-card--1{grid-column:span 2;grid-row:span 1;}
+  .home-promo-card--2,.home-promo-card--3,.home-promo-card--4,.home-promo-card--5{grid-column:span 1;}
+  [data-mosaic-mode="catalog"] .home-promo-card--1{grid-template-columns:minmax(240px,.8fr) minmax(0,1.2fr);grid-template-rows:minmax(0,1fr);align-items:center;}
+  [data-mosaic-mode="catalog"] .home-promo-card--1 .home-poster-art{margin-left:0;}
 }
 @media (max-width:860px){
-  .home-promo-mosaic{grid-template-columns:1fr;grid-auto-rows:268px;}
-  .home-promo-card,.home-skeleton-promo{grid-column:span 1;grid-row:span 1;}
-  .home-promo-card--1{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);}
-  .home-promo-card--1 h3{font-size:26px;}
-  .home-promo-card--1 .home-poster-product--1{width:56%;}
+  /* Rows size to their tile so the lead tile can be taller than the rest. A
+     fixed row height plus a taller tile made the lead overflow its row and
+     print its copy across the tile below it. */
+  .home-promo-mosaic{grid-template-columns:1fr;grid-auto-rows:auto;}
+  .home-promo-card,.home-skeleton-promo{grid-column:span 1;grid-row:span 1;height:330px;}
+  /* The lead tile holds a portrait asset; a flat 330px row would crop it to a
+     letterbox, so it keeps a taller box of its own. */
+  .home-promo-card--1{height:440px;}
+  .home-promo-card--1 h3{font-size:28px;}
+  [data-mosaic-mode="catalog"] .home-promo-card,[data-mosaic-mode="catalog"] .home-promo-card--1{
+    grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(180px,1fr);
+  }
+  [data-mosaic-mode="catalog"] .home-promo-card--1 .home-poster-art{margin-inline:calc(var(--s6) * -1);}
 }
 
 /* ---------- Closing band ---------- */
@@ -1141,7 +1193,7 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
     display:flex;flex-direction:column;gap:var(--s3);
     width:min(90vw,340px);margin:0;padding:var(--s5);overflow:auto;
     border:0;background:var(--surface);box-shadow:var(--e3);
-    transform:translateX(-100%);transition:transform var(--mid) var(--ease);
+    transform:translateX(-100%);
   }
   .filters.is-open{transform:none;}
   .filters__head{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);}
