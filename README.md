@@ -2,6 +2,8 @@
 
 Marko is a static-first, API-backed Selldone marketplace built from the Fashioni v2 storefront. Its interface uses an original blue, search-first retail system inspired by the information density and marketplace patterns of large general retailers, without copying Walmart code, branding, copy, or media.
 
+Production: https://selldone-marko-marketplace.ee-shirdel.workers.dev
+
 ## Live commerce model
 
 | Area | Live source |
@@ -12,7 +14,7 @@ Marko is a static-first, API-backed Selldone marketplace built from the Fashioni
 | Electronics seller | Merino (`6179`): 127 products, 397 variant offers |
 | Inventory | 2,000 vendor offers with exact canonical variant quantities |
 | Checkout | Browser-direct Selldone XAPI |
-| Hosting | Cloudflare Workers Static Assets |
+| Hosting | [Cloudflare Workers Static Assets](https://selldone-marko-marketplace.ee-shirdel.workers.dev) |
 
 The homepage, product cards, product pages, seller directory, and dedicated seller pages are data-driven. `storefront/marketplace-config.js` contains only public fallback presentation metadata and the restored audience shortcut mirror; live prices, stock, product data, and public vendor records remain in Selldone.
 
