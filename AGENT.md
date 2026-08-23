@@ -197,6 +197,85 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   invisible to a status-code check. Assert the response differs from the homepage as well.
   `dev-static.mjs` emulates Cloudflare's `html_handling` so this is testable locally.
 
+## Vendor Pages And Rails
+
+- An unknown vendor slug renders a not-found state. `vendor.html` used to fall
+  back to Alio for any unrecognised slug while leaving the wrong slug in the
+  URL, so a mistyped or retired seller silently served another vendor's
+  catalogue under that vendor's name. Every price, product and department on
+  the page belonged to somebody the visitor had not asked for. Treat a seller
+  fallback as a data-integrity fault, never as a convenience.
+- `View all` on a vendor page goes to `shop.html?vendor=<slug>`, which is a real
+  filter in `shop.js`. It previously pointed at `#vendor-products` — the same
+  twelve-card rail already on screen.
+- Every horizontal rail goes through `initRailNav(rail, nav, label)` in
+  `app.js`. A bare overflow container has no role, no name, no tab stop and no
+  visible control, so its content is reachable by trackpad and by nothing else.
+  The helper adds `role="group"`, an accessible name, a tab stop, arrow-key
+  scrolling and prev/next buttons that disable at each end and hide themselves
+  when nothing overflows. Native scrolling is untouched.
+- Vendor department discovery shows eight tiles and expands on request. Fifteen
+  departments as a flat grid ran to 1,702px on a phone. The toggle says "Show
+  all departments" — never a count.
+
+## Cards And Swatches
+
+- Cards in a group must end on one line. Two things moved the bottoms: a title
+  that ran to one or two lines, and a swatch row that only some products have.
+  `.pcard__name` reserves two lines, and the swatch slot is always emitted —
+  taking height only when a sibling card in the same group actually has
+  swatches, via `:has()`, so a catalog with no colours pays nothing.
+- The swatch row never wraps. Five swatches fit one line of a rail card; a
+  sixth wrapped and made that card 44px taller than its neighbours. Beyond
+  five, the remainder is shown as `+N` and the product page carries them all.
+- A variant with no colour is not a colour. Grouping colourless variants under
+  a synthetic key turned a bag with one navy variant and three material
+  variants into four swatches, three of them blank. A single colour renders no
+  selector at all — one colour is not a choice.
+- Group colours by `colorKey()`, never by the raw value. Selldone stores the
+  same colour with and without an alpha suffix, and grouping on the raw string
+  rendered `#243B64` and `#243B64ff` as two identical swatches.
+- `swatchLabel()` names every colour by nearest neighbour in `COLOR_NAMES`. It
+  used to fall through to the raw uppercase hex, so a screen reader announced
+  "#243B64". Add entries to the table rather than special-casing a product.
+
+## Promotional Eligibility
+
+- `isPromotionSafeProduct()` is the single guard for every promotional surface.
+  It reads name, category and tags, and is written as garment VOCABULARY —
+  rear-emphasis, intimates, swim/beachwear — not as a list of product ids or
+  filenames, so it survives a catalog change and a clone.
+- Write the pattern as a regex LITERAL. The guard was once assembled with
+  `new RegExp` from an array of strings and the escapes did not survive: `\b`
+  inside a template literal is a backspace character, not a word boundary, so
+  the guard matched nothing at all and six swimwear products walked into the
+  homepage rails while the code looked correct.
+- `beach` is inside the swim family deliberately. A beach cover-up is not
+  objectionable but its catalog photography is swimwear photography, and the
+  rule has always preferred one fewer promotional candidate over resurfacing an
+  image it should not have.
+
+## Merchandising Selection
+
+- A product earns one slot per page. Deals, brands, the department spotlight
+  and the savings panels each ranked the same catalog independently, so 31
+  homepage slots carried 24 distinct products. Modules claim what they show via
+  the shared ledger in `home.js`; a module still fills itself from claimed
+  stock if the unclaimed pool runs short, because an honest repeat beats a
+  half-empty rail.
+
+## Loading And Failure
+
+- Every catalog read is bounded by `fetchJson`'s timeout. Without it a hung
+  XAPI left the page on skeletons indefinitely, which is worse than an error
+  because there is nothing to act on.
+- `showCatalogError()` in `app.js` is the one error renderer, and it carries a
+  retry. Do not write a second inline error message.
+- Warm loads are dominated by XAPI, not by rendering: the slowest single call
+  is 1.3–1.8s against 185–515ms of frontend work. Before optimising the
+  storefront, measure the split — `performance.getEntriesByType("resource")`
+  filtered to `xapi.selldone.com` gives it directly.
+
 ## QA Scripts
 
 The checks assert contracts, not one design's magic numbers. Four of them were
@@ -214,6 +293,13 @@ pinned to the previous layout and were rewritten rather than deleted:
 - `_audit.js` compares the body surface and ink against the resolved `--surface`
   and `--ink` tokens rather than two hardcoded RGB triples, requires only the
   faces actually shipped, and implements WCAG 2.5.5's inline-link exception.
+- `bentocheck` detects which promo-grid mode is live and asserts the matching
+  set; the mode-independent rules stay in both branches.
+
+There is no lint script and no ESLint config in this repository. The closest
+equivalent is a parse check over every module:
+
+    for f in $(find storefront dashboard shared scripts callback -name '*.js' -o -name '*.mjs'); do node --check "$f"; done
 
 If a check fails because the design legitimately changed, generalise the
 assertion to the contract. Do not weaken it and do not delete it.

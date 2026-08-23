@@ -211,7 +211,8 @@ h1,h2,h3,.h1,.h2,.h3{font-family:var(--display);font-weight:800;letter-spacing:-
 .market-heading p{margin:0 0 6px;font-size:var(--t-xs);font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--theme-primary);}
 .market-heading h1,.market-heading h2{margin:0;}
 .market-heading>a{
-  display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;
+  min-width:var(--tap);min-height:var(--tap);
   color:var(--theme-primary);font-size:var(--t-md);font-weight:700;
 }
 .market-heading>a:hover{text-decoration:underline;text-underline-offset:3px;}
@@ -734,11 +735,14 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
   text-transform:uppercase;color:var(--theme-primary);
 }
 .home-module__head h2{margin:0;font-size:clamp(21px,2vw,30px);}
-.home-module__head>a{
-  display:inline-flex;align-items:center;gap:5px;min-height:var(--tap);flex:0 0 auto;
+/* Descendant, not child: the savings header wraps its link next to the rail
+   controls, and a child selector silently stopped applying the tap target. */
+.home-module__head a{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
+  min-width:var(--tap);min-height:var(--tap);
   color:var(--theme-primary);font-size:var(--t-md);font-weight:700;
 }
-.home-module__head>a:hover{text-decoration:underline;text-underline-offset:3px;}
+.home-module__head a:hover{text-decoration:underline;text-underline-offset:3px;}
 .home-module__head--sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
 .home-module__loading{
   display:block;min-height:220px;padding:var(--s6);
@@ -1213,8 +1217,18 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 
 /* ---------- Product detail ---------- */
 .pdp{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:var(--s9);align-items:start;}
-.gal{display:grid;grid-template-columns:88px minmax(0,1fr);gap:var(--s4);align-items:start;}
-.thumbs{display:flex;flex-direction:column;gap:var(--s2);max-height:560px;overflow:auto;scrollbar-width:none;}
+/* Flex, not grid. A product with a single gallery image hides `.thumbs`, and
+   in a two-track grid the main image then fell into the 88px thumbnail column
+   and rendered at 14px. Flex has no fixed tracks to fall into: with the
+   thumbnails absent the photograph simply takes the row, and no empty column
+   or phantom gap is left behind. */
+.gal{display:flex;gap:var(--s4);align-items:flex-start;}
+.galmain{flex:1 1 auto;min-width:0;}
+.thumbs{
+  display:flex;flex-direction:column;gap:var(--s2);flex:0 0 88px;width:88px;
+  max-height:560px;overflow:auto;scrollbar-width:none;
+}
+.thumbs::-webkit-scrollbar{display:none;}
 .thumbs::-webkit-scrollbar{display:none;}
 /* Both stages fix their own box and position the photograph inside it. A flex
    or grid item that is merely given `aspect-ratio` is still content-sized, so a
@@ -1344,8 +1358,8 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
   .reviews-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media (max-width:760px){
-  .gal{grid-template-columns:1fr;}
-  .thumbs{flex-direction:row;order:2;max-height:none;}
+  .gal{flex-direction:column;}
+  .thumbs{flex-direction:row;order:2;width:auto;max-height:none;}
   .thumb{flex:0 0 68px;width:68px;height:68px;}
   .galmain{order:1;}
   .purchase-actions{grid-template-columns:1fr;}
@@ -1655,3 +1669,193 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
    catalogue is unavailable the column would otherwise render a heading over
    nothing, which reads as a broken footer rather than a degraded one. */
 .ft__departments:has(> .ft__links-split:empty){display:none;}
+
+/* ==========================================================================
+   16 QA CORRECTIONS
+   Each block names the report issue it answers. They sit together at the end
+   rather than being scattered, because they are corrections to decisions made
+   above and reading them in one place is how the next person avoids repeating
+   the original mistake.
+   ========================================================================== */
+
+/* MK-005, MK-007 — one breadcrumb baseline.
+   Links carried a 44px flex tap target while the separators and the current
+   page were raw text nodes at the top of the same row, so their text sat ~13px
+   apart. The separator is now drawn by CSS and every item is the same
+   flex-centred box, which makes a shared baseline a property of the markup
+   rather than something to keep re-tuning. */
+.crumb{display:flex;flex-wrap:wrap;align-items:center;gap:0;}
+.crumb>*{display:inline-flex;align-items:center;min-height:var(--tap);}
+.crumb a{justify-content:center;min-width:var(--tap);padding-inline:2px;}
+.crumb>*+*::before{
+  content:"/";display:inline-block;padding:0 8px;
+  color:var(--ink-4);font-weight:400;
+}
+.crumb [aria-current="page"]{color:var(--ink-2);}
+
+/* MK-006 — Filters and Newest share a vertical centre.
+   `.fbar` is a mobile-only control, but giving it a display in the target-size
+   block overrode `.mobonly{display:none}` and leaked it onto the desktop
+   toolbar, where its box did not match the select's. */
+.fbar{display:none;}
+@media (max-width:1023px){
+  .fbar{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:var(--tap);min-height:var(--tap);padding:0 var(--s4);
+    border:1px solid var(--line);border-radius:var(--r-pill);font-weight:600;
+  }
+}
+.list-controls{align-items:center;}
+.list-controls>*{align-self:center;}
+
+/* MK-008 — the sticky purchase bar is bounded by the content container.
+   It previously stretched the button across the full viewport: 1737px of
+   "Add to bag" at 1920. The bar still spans the width, the CONTROL does not. */
+.buybar{padding:var(--s3) 0;}
+.buybar__in{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s5);
+  width:100%;max-width:calc(var(--maxw) + 2 * var(--pad));margin:0 auto;padding:0 var(--pad);
+}
+.buybar__meta{min-width:0;}
+.buybar__meta .price{font-size:var(--t-xl);}
+.buybar .btn{flex:0 0 auto;width:auto;min-width:200px;max-width:320px;}
+/* Room for the bar to sit over, so the last of the page can still be read. */
+.pdp-page main{padding-bottom:96px;}
+@media (max-width:560px){
+  .buybar__in{gap:var(--s3);}
+  .buybar .btn{min-width:0;flex:1;}
+}
+
+/* MK-009 — savings cards align internally, not just externally.
+   The outer card and art geometry already matched to the pixel; one- and
+   two-line product names were what shifted the baselines. The title slot is
+   now a reserved two lines whatever the name length. */
+.pcard--compact .pcard__name{
+  min-height:calc(2 * 1.4em);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+}
+.pcard--compact .pcard__link{display:flex;flex-direction:column;height:100%;}
+
+/* MK-011 — carousel indicators are circles.
+   They were 34x4 pills. The interactive target stays 44px; the dot itself is a
+   true circle, and the focus ring follows the dot rather than the tap box. */
+.market-hero__dots{gap:2px;}
+.market-hero__dots button{
+  display:grid;place-items:center;width:var(--tap);height:var(--tap);border-radius:50%;
+}
+.market-hero__dots button::after{
+  content:"";position:static;width:11px;height:11px;border-radius:50%;
+  background:rgba(255,255,255,.42);
+  transition:background var(--fast) var(--ease),box-shadow var(--fast) var(--ease);
+}
+.market-hero__dots button[aria-current="true"]::after{
+  background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.22);
+}
+.market-hero__dots button:hover::after{background:rgba(255,255,255,.72);}
+.market-hero__dots button:focus-visible{outline:none;}
+.market-hero__dots button:focus-visible::after{
+  box-shadow:0 0 0 3px var(--theme-ink),0 0 0 6px #fff;
+}
+
+/* MK-012 — mobile density and discoverability.
+   A department label that ellipsised to "Dresses & O…" left no accessible full
+   name in view; two lines fit every current department without one. */
+.home-dept-card b{
+  white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:2;overflow:hidden;line-height:1.25;
+}
+@media (max-width:860px){
+  /* Shorter promo tiles: the section was 1957px on its own. */
+  .home-promo-card,.home-skeleton-promo{height:280px;}
+  .home-promo-card--1{height:380px;}
+  .home-promo-card__copy{padding:var(--s5);}
+  .home-promo-card--1 h3{font-size:25px;}
+}
+
+/* MK-012 — the savings rail says it is a rail.
+   One panel at a time with no affordance read as a static block. */
+.home-savings-head{display:flex;align-items:center;gap:var(--s2);}
+.home-rail-nav{display:none;gap:var(--s2);margin-left:auto;}
+.home-rail-nav button{
+  display:grid;place-items:center;width:var(--tap);height:var(--tap);
+  border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink-2);
+}
+.home-rail-nav button:hover:not(:disabled){border-color:var(--theme-primary);color:var(--theme-primary);}
+.home-rail-nav button:disabled{opacity:.35;cursor:default;}
+.home-rail-nav svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+@media (max-width:1180px){ .home-rail-nav{display:flex;} }
+
+/* MK-002 — the theme popover clears the header.
+   The platform strip created no stacking context, so its menu at z-index 4 sat
+   under a header at 120 and the first three themes could not be clicked. */
+.sdbar{position:relative;z-index:200;}
+
+/* MK-003 — the catalog error is actionable. */
+.home-catalog-message{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.home-catalog-message .linkish{min-height:var(--tap);display:inline-flex;align-items:center;color:#6B5312;}
+
+/* ==========================================================================
+   17 VENDOR QA CORRECTIONS (MK-015 … MK-020)
+   ========================================================================== */
+
+/* MK-016 — cards in a group end on one line.
+   Outer widths already matched; what moved the bottoms was variable content —
+   a one- or two-line title, and a swatch row that some products have and
+   others do not. Both slots are now reserved, so the run of cards shares a
+   baseline for the price, the title and the card edge.
+
+   The swatch slot only takes height when a sibling in the SAME group has
+   swatches, so a catalog with no colours at all does not pay 44px per card. */
+.pcard__name{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  min-height:calc(2 * 1.4em);
+}
+.pcard__swatches{margin-top:auto;}
+.pgrid:has(.pcard__swatch) .pcard__swatches,
+.scroller:has(.pcard__swatch) .pcard__swatches,
+.related-track:has(.pcard__swatch) .pcard__swatches,
+.home-product-row:has(.pcard__swatch) .pcard__swatches,
+.home-savings-panel:has(.pcard__swatch) .pcard__swatches,
+.home-lineup__grid:has(.pcard__swatch) .pcard__swatches{min-height:var(--tap);}
+/* The compact card has no swatches at all, so it reserves nothing. */
+.pcard--compact .pcard__swatches{display:none;min-height:0;}
+
+/* MK-017 — rail controls, shared with the homepage rails. */
+.market-heading__tools{display:flex;align-items:center;gap:var(--s3);flex:0 0 auto;}
+.market-heading__tools a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:var(--tap);min-height:var(--tap);
+  color:var(--theme-primary);font-size:var(--t-md);font-weight:700;
+}
+.market-heading__tools a:hover{text-decoration:underline;text-underline-offset:3px;}
+.market-product-rail:focus-visible,.scroller:focus-visible{
+  outline:2px solid var(--theme-primary);outline-offset:4px;border-radius:var(--r-sm);
+}
+/* Vendor rails carry their controls at every width, unlike the homepage
+   savings rail which only overflows below 1180px. */
+.market-heading__tools .home-rail-nav{display:flex;}
+
+/* MK-020 — department discovery scales.
+   Merino's fifteen departments ran to 1,702px on a phone as a flat grid. */
+.vendor-categories__more{display:flex;justify-content:center;margin-top:var(--s5);}
+.vendor-categories__more .btn{min-width:240px;}
+@media (max-width:640px){
+  .vendor-categories{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);}
+  .vendor-categories>a{padding:var(--s3);}
+  .vendor-categories b{font-size:var(--t-sm);}
+}
+
+/* MK-015 — the unknown-seller state. */
+.notfound-vendor{padding:var(--s9) 0;}
+.notfound-vendor h1{margin:var(--s3) 0 var(--s4);}
+.notfound-vendor__actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s7);}
+
+/* MK-016 — one line of swatches, always. A wrapped second row was the only
+   remaining source of unequal card heights in a rail. */
+.pcard__swatches{flex-wrap:nowrap;overflow:hidden;}
+.pcard__swatch{flex:0 0 var(--tap);}
+.pcard__swatch-more{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:var(--tap);height:var(--tap);flex:0 0 auto;
+  color:var(--ink-3);font-size:var(--t-sm);font-weight:700;
+}

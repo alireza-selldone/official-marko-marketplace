@@ -353,6 +353,9 @@ const COLOR_NAMES = {
   "#F6EAD2": "Ivory", "#00796B": "Teal", "#0097A7": "Aqua", "#0DB2AE": "Turquoise",
   "#00582F": "Forest Green", "#689F38": "Green", "#008000": "Green", "#ADFF2F": "Lime",
   "#1976D2": "Blue", "#303F9F": "Indigo", "#000080": "Navy", "#00FFFF": "Cyan",
+  "#243B64": "Midnight Blue", "#1B2A4A": "Midnight Blue", "#2C3E50": "Steel Blue",
+  "#4A5568": "Graphite", "#7F8C8D": "Stone", "#2B7A78": "Pine", "#795B99": "Wisteria",
+  "#D77838": "Burnt Orange",
   "#229DBF": "Sky Blue", "#0D5A74": "Deep Teal", "#96B5C9": "Powder Blue",
   "#512DA8": "Violet", "#7B1FA2": "Purple", "#800080": "Purple", "#E6E6FA": "Lavender",
   "#6A5ACD": "Slate Blue", "#A86EA9": "Mauve", "#6B2257": "Plum", "#271020": "Aubergine",
@@ -370,11 +373,45 @@ export function swatchStyle(color) {
   return `background-image:linear-gradient(135deg,${parts.join(",")})`;
 }
 
+/* MK-019 — every swatch gets a name a person can act on.
+   `swatchLabel` used to fall through to the raw uppercase hex whenever a
+   colour was not an exact key in COLOR_NAMES, so a shopper heard "#243B64".
+   Nearest-neighbour in RGB against the same table gives a real name for any
+   colour without inventing a vocabulary: the table is the vocabulary. */
+const hexToRgb = (hex) => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
+
+const NAMED_RGB = Object.entries(COLOR_NAMES).map(([hex, name]) => ({ name, rgb: hexToRgb(hex) }));
+
+function nearestColorName(code) {
+  const exact = COLOR_NAMES[code.toUpperCase()];
+  if (exact) return exact;
+  const [r, g, b] = hexToRgb(code);
+  let best = null;
+  let bestDistance = Infinity;
+  for (const entry of NAMED_RGB) {
+    /* Weighted so the name tracks perceived hue rather than raw channel
+       distance; green carries most of the luminance a person judges by. */
+    const distance = 2 * (r - entry.rgb[0]) ** 2 + 4 * (g - entry.rgb[1]) ** 2 + 3 * (b - entry.rgb[2]) ** 2;
+    if (distance < bestDistance) { bestDistance = distance; best = entry.name; }
+  }
+  return best || "Colour";
+}
+
+/* One canonical key per colour. Selldone records the same colour as both
+   `#243B64` and `#243B64ff`, and grouping on the raw string made those two
+   different swatches — the duplicate pairs the vendor audit found. */
+export const colorKey = (value) => colorCodes(value).map((code) => code.toUpperCase()).join("/");
+
 export function swatchLabel(color) {
   const codes = colorCodes(color);
   if (!codes.length) return "Option";
-  return codes.map((code) => COLOR_NAMES[code.toUpperCase()] || code.toUpperCase()).join(" and ");
+  return codes.map(nearestColorName).join(" and ");
 }
+
 
 export const variantColors = (p) => variantsOf(p).map((v) => v.color).filter(Boolean);
 
@@ -502,24 +539,76 @@ function readCatalogSnapshot() {
   } catch { return null; }
 }
 
-/* Standing promotional-image safety rule.
-   Lower-body/rear-emphasis apparel is never selected for a homepage, brand,
-   seller, navigation, or other promotional image. Those products remain
-   available in normal listings and on their own product page. A future import
-   can also opt an item out explicitly with a `promo-ban` / `rear-angle` tag.
-   This deliberately favours a false-negative (one less promo candidate) over
-   ever resurfacing rear-angle apparel photography. */
-const PROMO_IMAGE_BAN = /\b(?:butt|booty|bum|scrunch|twerk|cheeky|thong|rear|backside|leggings?|jeggings?|bike(?:r)?\s+shorts?|yoga\s+shorts?|workout\s+shorts?|compression\s+shorts?|hot\s+pants?|shorts)\b/i;
+/* Standing promotional-image eligibility rule.
+   ------------------------------------------------------------------------
+   A product is eligible for a PROMOTIONAL placement — homepage, brand rail,
+   seller hero, navigation art, any editorial tile — only if it passes this
+   guard. Ordinary listings and the product's own page are unaffected: this
+   governs what the shop puts forward, not what it sells.
+
+   The guard is deliberately written as garment VOCABULARY rather than as a
+   list of offending product ids or filenames, so it keeps working when the
+   catalog changes and when this repo is cloned onto a different one. It reads
+   the product name, its category and its tags, because a name alone misses a
+   product whose category already says what it is.
+
+   Three families are excluded:
+     rear      lower-body/rear-emphasis apparel photography
+     intimates lingerie and underwear
+     swim      swimwear and beachwear, where the photograph is of a body
+               rather than of a garment
+
+   `beach` is inside the swim family on purpose. A beach cover-up is not itself
+   objectionable, but its catalog photography is swimwear photography. The rule
+   has always preferred a false negative — one fewer promotional candidate —
+   over resurfacing an image it should not have.
+
+   A merchant can also opt a product out without touching code by tagging it
+   `promo-ban`, `rear-angle`, `rear-view` or `back-view`. */
+const PROMO_BAN_TAGS = /^(?:promo-ban|rear-angle|rear-view|back-view)$/;
+
+/* Written as one literal rather than assembled from strings. The first attempt
+   built it with `new RegExp` out of an array of terms, and the escapes did not
+   survive: `\b` inside a template literal is a backspace character, not a word
+   boundary, so the guard matched nothing at all and every swimwear product
+   walked straight into the promotional rails. A literal cannot lose an escape. */
+const PROMO_INELIGIBLE =
+  /\b(?:butt|booty|bum|scrunch|twerk|cheeky|rear|backside|leggings?|jeggings?|bike(?:r)?\s+shorts?|yoga\s+shorts?|workout\s+shorts?|compression\s+shorts?|hot\s+pants?|shorts|thong|lingerie|bras?|bralette|briefs?|pant(?:y|ies)|knickers|underwear|boxers?|corset|garter|negligee|babydoll|bikini|tankini|monokini|swim|swimsuits?|swimwear|bathing\s+suits?|beachwear|beach|cover[-\s]?ups?)\b/i;
+
+/* A product name does not always say what its photograph shows. "Ofay
+   Reflecting Rebel Shirred" is a swimsuit; "Ofay Piece Textured Chain" is a
+   bikini. Neither name trips the vocabulary above, and both reached the seller
+   hero — a DOM scan of product names reported the page clean while the page
+   plainly was not.
+
+   Selldone image paths are the original filenames concatenated, so they carry
+   the description the name lost: `beautifulwomenwithswimmingsuit…`,
+   `…womannavywhitestripedswimsuitpoolside…`. Filenames have no word
+   separators, so this list matches as substrings and is kept deliberately
+   narrow: every term here is unambiguous inside a run-together filename.
+   `bra` is excluded on purpose — it would match "brand" and "brown". */
+const PROMO_INELIGIBLE_MEDIA =
+  /(?:bikini|tankini|monokini|swimsuit|swimmingsuit|swimwear|bathingsuit|beachwear|lingerie|underwear|thong|buttscrunch|booty|sexy|summerbody|topless|nude|cleavage)/i;
 
 export function isPromotionSafeProduct(product) {
   if (!product) return false;
   const tagRows = product.raw?.tags ?? product.raw?.product_tags ?? product.tags ?? [];
   const tags = (Array.isArray(tagRows) ? tagRows : [tagRows])
     .map((tag) => String(tag?.name ?? tag?.title ?? tag ?? "").toLowerCase());
-  if (tags.some((tag) => /^(?:promo-ban|rear-angle|rear-view|back-view)$/.test(tag))) return false;
-  const searchable = [product.name, product.catName, product.cat, product.raw?.title, product.raw?.subtitle]
+  if (tags.some((tag) => PROMO_BAN_TAGS.test(tag))) return false;
+
+  /* Category and tags are read alongside the name, because a name alone misses
+     a product whose department already says what the photograph shows. */
+  const searchable = [
+    product.name, product.catName, product.cat,
+    product.raw?.title, product.raw?.subtitle, product.raw?.category?.title,
+    ...tags,
+  ].filter(Boolean).join(" ");
+  if (PROMO_INELIGIBLE.test(searchable)) return false;
+
+  const media = [product.icon, product.image, product.raw?.icon, product.raw?.cover]
     .filter(Boolean).join(" ");
-  return !PROMO_IMAGE_BAN.test(searchable);
+  return !PROMO_INELIGIBLE_MEDIA.test(media);
 }
 
 export const promotionSafeProducts = (products = []) => products.filter(isPromotionSafeProduct);
@@ -546,20 +635,41 @@ function mirroredAudienceIds(id) {
     .map(([categoryId]) => Number(categoryId));
 }
 
+/* A catalog request that never settles is worse than one that fails: the page
+   sits on skeletons with nothing to act on. Every catalog read is bounded, and
+   the failure path already has somewhere to go — the browser snapshot first,
+   then the visible error with a retry. */
+export const CATALOG_TIMEOUT_MS = 12000;
+
+export async function fetchJson(url, { timeout = CATALOG_TIMEOUT_MS, label = url } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      mode: "cors",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`${label} ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error(`${label} timed out after ${timeout}ms`);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function loadCatalog() {
   if (_cache) return _cache;
 
   let listJson;
   let allJson;
   try {
-    const [listRes, allRes] = await Promise.all([
-      fetch(URL_PRODUCTS_LIST(), { mode: "cors", headers: { Accept: "application/json" } }),
-      fetch(URL_PRODUCTS_ALL(), { mode: "cors", headers: { Accept: "application/json" } }),
+    [listJson, allJson] = await Promise.all([
+      fetchJson(URL_PRODUCTS_LIST(), { label: "products/list" }),
+      fetchJson(URL_PRODUCTS_ALL(), { label: "products/all" }),
     ]);
-    if (!listRes.ok) throw new Error(`products/list ${listRes.status}`);
-    if (!allRes.ok) throw new Error(`products/all ${allRes.status}`);
-    listJson = await listRes.json();
-    allJson = await allRes.json();
     if (listJson?.error || allJson?.error || !listJson?.products?.length || !allJson?.products?.length) {
       throw new Error(listJson?.error_msg || allJson?.error_msg || "live catalog response is empty");
     }

@@ -1,5 +1,5 @@
 import { loadCatalog, loadTaggedProductIds, money, promotionSafeProducts } from "./shop-data.js";
-import { cardHTML, esc } from "./app.js";
+import { cardHTML, esc, showCatalogError, initRailNav } from "./app.js";
 import { shopConfig } from "./shop-config.js";
 
 /* ---------- Hero ----------
@@ -302,6 +302,25 @@ function categoryGroups(catalog, products) {
 /* A module that cannot be filled honestly is removed rather than padded. */
 const dropModule = (element) => element?.closest(".home-module")?.remove();
 
+/* MK-014 — a product earns one slot on the page.
+   Deals, brands, the department spotlight and the savings panels each ranked
+   the same catalog independently, so 31 slots carried only 24 distinct
+   products and the page read as the same merchandise four times. Modules now
+   claim what they show. A module still fills itself if the unclaimed pool runs
+   short — an honest repeat beats a half-empty rail — but it prefers new stock. */
+function claim(pool, count, used) {
+  const fresh = pool.filter((product) => !used.has(product.id));
+  const chosen = fresh.slice(0, count);
+  if (chosen.length < count) {
+    for (const product of pool) {
+      if (chosen.length >= count) break;
+      if (!chosen.includes(product)) chosen.push(product);
+    }
+  }
+  chosen.forEach((product) => used.add(product.id));
+  return chosen;
+}
+
 /* ---------- Modules ---------- */
 function renderRail(root, products, clearanceIds) {
   root.innerHTML = products.map((product) => cardHTML(product, {
@@ -309,33 +328,38 @@ function renderRail(root, products, clearanceIds) {
   })).join("");
 }
 
-function renderDeals(products, clearanceIds) {
+function renderDeals(products, clearanceIds, used) {
   const root = document.querySelector("[data-home-deals]");
   if (!root) return;
   const discounted = rankedProducts(products.filter((product) => product.was > product.price));
   /* "Today's best prices" is a claim. With too few live discounts to support
      it the section is removed, not filled with full-price stock. */
   if (discounted.length < 4) { dropModule(root); return; }
-  renderRail(root, discounted.slice(0, 6), clearanceIds);
+  renderRail(root, claim(discounted, 6, used), clearanceIds);
 }
 
-function renderBrandProducts(catalog, products, clearanceIds) {
+function renderBrandProducts(catalog, products, clearanceIds, used) {
   const root = document.querySelector("[data-home-brand-products]");
   if (!root) return;
   const chosen = [];
-  const used = new Set();
+  const seen = new Set();
+  /* One product per brand, preferring a brand not already represented above. */
   [...catalog.brands].sort((a, b) => Number(b.count) - Number(a.count)).forEach((brand) => {
-    const product = rankedProducts(products.filter((item) => item.brand === brand.name))[0];
-    if (product && !used.has(product.id) && chosen.length < 6) { chosen.push(product); used.add(product.id); }
+    if (chosen.length >= 6) return;
+    const inBrand = rankedProducts(products.filter((item) => item.brand === brand.name));
+    const product = inBrand.find((item) => !used.has(item.id)) || inBrand[0];
+    if (product && !seen.has(product.id)) { chosen.push(product); seen.add(product.id); used.add(product.id); }
   });
   rankedProducts(products).forEach((product) => {
-    if (!used.has(product.id) && chosen.length < 6) { chosen.push(product); used.add(product.id); }
+    if (!seen.has(product.id) && !used.has(product.id) && chosen.length < 6) {
+      chosen.push(product); seen.add(product.id); used.add(product.id);
+    }
   });
   if (!chosen.length) { dropModule(root); return; }
   renderRail(root, chosen, clearanceIds);
 }
 
-function renderSavings(groups, clearanceIds) {
+function renderSavings(groups, clearanceIds, used) {
   const root = document.querySelector("[data-home-savings-groups]");
   if (!root) return;
   const discounted = groups
@@ -343,17 +367,19 @@ function renderSavings(groups, clearanceIds) {
     .filter((group) => group.offerProducts.length >= 4)
     .sort((left, right) => right.offerProducts.length - left.offerProducts.length);
   if (discounted.length < 2) { dropModule(root); return; }
+  const nav = document.querySelector('[data-rail-nav="savings"]');
   root.innerHTML = discounted.slice(0, 4).map((group) => `
     <article class="home-savings-panel">
       <header><b>${esc(group.name)}</b><a href="shop.html?cat=${encodeURIComponent(group.slug)}">View all</a></header>
-      <div>${group.offerProducts.slice(0, 4).map((product) => cardHTML(product, {
+      <div>${claim(group.offerProducts, 4, used).map((product) => cardHTML(product, {
         compact: true,
         badge: clearanceIds.has(Number(product.id)) ? "Clearance" : "",
       })).join("")}</div>
     </article>`).join("");
+  initRailNav(root, nav, "Savings by department");
 }
 
-function renderLineup(groups, clearanceIds) {
+function renderLineup(groups, clearanceIds, used) {
   const group = groups.find((item) => item.products.length >= 4) || groups[0];
   const productsRoot = document.querySelector("[data-home-lineup-products]");
   if (!group || !productsRoot) { dropModule(productsRoot); return; }
@@ -365,10 +391,11 @@ function renderLineup(groups, clearanceIds) {
   if (title) title.textContent = `The ${group.name.toLowerCase()} lineup`;
   if (kicker) kicker.textContent = "Featured department";
   if (link) link.href = href;
-  productsRoot.innerHTML = group.products.slice(0, 3).map((product) => cardHTML(product, {
+  const lineup = claim(group.products, 3, used);
+  productsRoot.innerHTML = lineup.map((product) => cardHTML(product, {
     badge: clearanceIds.has(Number(product.id)) ? "Clearance" : "",
   })).join("");
-  const feature = group.products[3] || group.products[0];
+  const feature = group.products.find((product) => !lineup.includes(product)) || group.products[0];
   const from = Number(group.from) || Number(feature.range?.from) || Number(feature.price);
   if (featureRoot) {
     featureRoot.innerHTML = `<a href="${href}">
@@ -534,23 +561,20 @@ function renderCatalogUnavailable(catalog) {
     "[data-home-mosaic]", "[data-home-lineup-products]"].forEach((selector) => {
     dropModule(document.querySelector(selector));
   });
-  const message = document.querySelector("[data-catalog-error]");
-  if (message) {
-    message.hidden = false;
-    message.textContent = "Live products are temporarily unavailable. The marketplace will refresh them automatically.";
-  }
+  showCatalogError("Live products are temporarily unavailable.");
 }
 
 function renderMarketplaceModules(catalog, clearanceIds = new Set()) {
   const products = promotionSafeProducts(sellableProducts(catalog));
   const groups = categoryGroups(catalog, products);
   if (!products.length || !groups.length) { renderCatalogUnavailable(catalog); return; }
+  const used = new Set();
   renderDepartments(groups);
-  renderDeals(products, clearanceIds);
+  renderDeals(products, clearanceIds, used);
   renderMosaic(catalog, groups);
-  renderLineup(groups, clearanceIds);
-  renderBrandProducts(catalog, products, clearanceIds);
-  renderSavings(groups, clearanceIds);
+  renderLineup(groups, clearanceIds, used);
+  renderBrandProducts(catalog, products, clearanceIds, used);
+  renderSavings(groups, clearanceIds, used);
 }
 
 renderLoadingLayout();
@@ -568,9 +592,5 @@ loadCatalog().then(async (catalog) => {
 }).catch(async (error) => {
   console.error(error);
   renderCatalogUnavailable({ cfg: await shopConfig() });
-  const message = document.querySelector("[data-catalog-error]");
-  if (message) {
-    message.hidden = false;
-    message.textContent = "The live catalog could not be loaded. Please try again shortly.";
-  }
+  showCatalogError("The live catalog could not be loaded.");
 });

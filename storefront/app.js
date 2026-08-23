@@ -132,7 +132,20 @@ const savingsBadge = (p) => {
 export function cardHTML(p, { compact = false, badge = "" } = {}) {
   const saleBadge = saleBadgeHTML(p);
   const flag = badge || savingsBadge(p);
-  const colors = compact ? [] : [...new Set(p.colors || [])].slice(0, 6).map((color) => {
+  /* Same rule as the product page: a single colour is not a choice, so a card
+     with one swatch shows none. Keeps the grid from implying variety that the
+     catalog does not have. */
+  const distinctColors = [...new Set(p.colors || [])];
+  /* Five is what fits on one line of a rail card. A sixth wrapped the row and
+     made that one card 44px taller than every other card beside it, which is
+     the unequal-height defect the vendor audit measured. The remainder is
+     counted rather than dropped silently, and the product page shows them all. */
+  const SWATCH_SLOTS = 5;
+  const overflowColors = Math.max(0, distinctColors.length - SWATCH_SLOTS);
+  const shownColors = overflowColors
+    ? distinctColors.slice(0, SWATCH_SLOTS - 1)
+    : distinctColors.slice(0, SWATCH_SLOTS);
+  const colors = compact || distinctColors.length < 2 ? [] : shownColors.map((color) => {
     const variants = (p.variants || []).filter((variant) => String(variant.color).toUpperCase() === String(color).toUpperCase());
     const imageVariant = variants.find((variant) => variant.image) || variants[0];
     return { color, variantId: imageVariant?.id || "", image: imageVariant?.image ? img(imageVariant.image) : p.image };
@@ -151,7 +164,13 @@ export function cardHTML(p, { compact = false, badge = "" } = {}) {
       <span class="pcard__name">${esc(p.name)}</span>
       <p class="pcard__meta">${esc(p.brand || p.catName)}</p>
     </a>
-    ${colors.length ? `<span class="pcard__swatches" role="radiogroup" aria-label="Choose a color for ${esc(p.name)}">${colors.map((option, index) => `<button class="pcard__swatch${index ? "" : " is-on"}" type="button" role="radio" aria-checked="${index ? "false" : "true"}" aria-label="${esc(swatchLabel(option.color))}" data-card-color="${esc(String(option.color))}" data-card-variant="${option.variantId}" data-card-image-src="${esc(option.image)}"><span aria-hidden="true" style="${swatchStyle(option.color)}"></span></button>`).join("")}</span>` : ""}
+    ${colors.length
+      ? `<span class="pcard__swatches" role="radiogroup" aria-label="Choose a color for ${esc(p.name)}">${colors.map((option, index) => `<button class="pcard__swatch${index ? "" : " is-on"}" type="button" role="radio" aria-checked="${index ? "false" : "true"}" aria-label="${esc(swatchLabel(option.color))}" data-card-color="${esc(String(option.color))}" data-card-variant="${option.variantId}" data-card-image-src="${esc(option.image)}"><span aria-hidden="true" style="${swatchStyle(option.color)}"></span></button>`).join("")}${overflowColors ? `<span class="pcard__swatch-more">+${overflowColors}</span>` : ""}</span>`
+      /* MK-016 — the slot exists even when the product has no colours, so a
+         rail of cards keeps one shared bottom edge instead of stepping wherever
+         a swatch row happens to appear. It reserves height only when a sibling
+         card in the same group actually has swatches; see the `:has` rule. */
+      : `<span class="pcard__swatches" aria-hidden="true"></span>`}
   </article>`;
 }
 
@@ -680,6 +699,78 @@ function renderBag() {
     b.addEventListener("click", () => removeFromBag(b.dataset.remove)));
 }
 
+/* ---------- Horizontal rails ----------
+   MK-012 / MK-017. A rail used to be a bare overflow container: no role, no
+   label, no tab stop and no visible control, so its content was reachable by
+   trackpad or drag and by nothing else. Two rails on the vendor page held
+   3,340px of products behind that.
+
+   The rail keeps native scrolling — touch and trackpad behave exactly as
+   before — and gains the things a scroll container cannot imply on its own:
+   a name, a tab stop, and buttons that page by one card and disable at each
+   end. The buttons hide themselves when everything already fits. */
+export function initRailNav(rail, nav, label) {
+  if (!rail || rail.dataset.railWired) return;
+  rail.dataset.railWired = "1";
+
+  if (label) {
+    rail.setAttribute("role", "group");
+    rail.setAttribute("aria-label", label);
+  }
+  /* A scrollable region needs a tab stop, or keyboard users cannot reach the
+     content that is scrolled out of view. */
+  rail.tabIndex = 0;
+
+  const step = () => {
+    const first = rail.firstElementChild;
+    if (!first) return rail.clientWidth;
+    const gap = parseFloat(getComputedStyle(rail).columnGap || "0") || 0;
+    return first.getBoundingClientRect().width + gap;
+  };
+
+  const prev = nav?.querySelector("[data-rail-prev]");
+  const next = nav?.querySelector("[data-rail-next]");
+  const sync = () => {
+    const max = rail.scrollWidth - rail.clientWidth - 1;
+    if (prev) prev.disabled = rail.scrollLeft <= 0;
+    if (next) next.disabled = rail.scrollLeft >= max;
+    if (nav) nav.hidden = max <= 0;
+  };
+
+  prev?.addEventListener("click", () => rail.scrollBy({ left: -step(), behavior: "smooth" }));
+  next?.addEventListener("click", () => rail.scrollBy({ left: step(), behavior: "smooth" }));
+  rail.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    rail.scrollBy({ left: event.key === "ArrowLeft" ? -step() : step(), behavior: "smooth" });
+  });
+  rail.addEventListener("scroll", sync, { passive: true });
+  addEventListener("resize", sync);
+  /* Cards arrive after the catalog resolves, so the first measurement can be
+     of an empty rail. */
+  new ResizeObserver(sync).observe(rail);
+  sync();
+}
+
+/* ---------- Catalog error state ----------
+   One renderer for every page. The catalog reads are bounded by a timeout, so
+   a stalled load now ends here rather than sitting on skeletons forever — and
+   an error the visitor cannot act on is only marginally better than the
+   skeletons, hence the retry. */
+export function showCatalogError(text = "The catalog could not be loaded.") {
+  document.querySelectorAll("[data-catalog-error]").forEach((node) => {
+    node.hidden = false;
+    node.textContent = "";
+    node.append(`${text} `);
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "linkish";
+    retry.textContent = "Try again";
+    retry.addEventListener("click", () => location.reload());
+    node.append(retry);
+  });
+}
+
 /* ---------- Gallery lightbox ---------- */
 export function openLightbox(src, cap) {
   let box = document.querySelector(".lbox");
@@ -978,11 +1069,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     CAT = await loadCatalog();
   } catch (err) {
-    document.querySelectorAll("[data-catalog-error]").forEach((e) => {
-      e.hidden = false;
-      e.textContent = "The catalog could not be loaded from Selldone. Refresh to try again.";
-    });
-    console.error("[fashioni] catalog load failed", err);
+    showCatalogError("The catalog could not be loaded from Selldone.");
+    console.error("[marko] catalog load failed", err);
     return;
   }
 

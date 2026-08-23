@@ -78,6 +78,10 @@ function initShop(cat) {
   const presetLabel = params.get("label");
   const presetBrand = params.get("brand");
   const presetAudience = params.get("audience");
+  /* MK-018 — a seller is a real filter, so "View all" on a vendor page has
+     somewhere to go. Without it the control could only ever point back at the
+     twelve-card rail the visitor was already looking at. */
+  const presetVendor = params.get("vendor");
   const matchesPresetAudience = (product) => {
     if (!presetAudience) return true;
     if (presetAudience === "kids") {
@@ -91,6 +95,7 @@ function initShop(cat) {
   const contextualProducts = cat.products.filter((product) =>
     matchesPresetAudience(product) &&
     (!presetCats.size || presetCats.has(product.cat)) &&
+    (!presetVendor || product.vendorSlug === presetVendor) &&
     (!presetBrand || product.brand === presetBrand));
 
   /* ---- Filter 1: collection ---- */
@@ -181,6 +186,7 @@ function initShop(cat) {
     const list = cat.products.filter((p) =>
       (!picked.length || picked.includes(p.cat)) &&
       matchesPresetAudience(p) &&
+      (!presetVendor || p.vendorSlug === presetVendor) &&
       (!pickedSizes.length || pickedSizes.some((size) => p.sizes?.includes(size))) &&
       (!brands.length || brands.includes(p.brand)) &&
       (atFloor || p.price >= a) && (atCeil || p.price <= b) &&
@@ -196,12 +202,16 @@ function initShop(cat) {
     const audienceTitle = presetAudience === "kids" ? "Kids"
       : presetAudience === "adults" ? "Women & Men"
       : audience?.title;
-    const pageName = one?.name || presetLabel || audienceTitle || presetBrand || "All products";
+    const vendorName = presetVendor
+      ? cat.products.find((product) => product.vendorSlug === presetVendor)?.vendorName || presetVendor
+      : "";
+    const pageName = one?.name || presetLabel || audienceTitle || presetBrand || vendorName || "All products";
     title.textContent = pageName;
     if (crumbTitle) crumbTitle.textContent = pageName === "All products" ? "Products" : pageName;
     if (intro) intro.textContent = one ? one.blurb
       : audienceTitle ? `Styles selected for ${audienceTitle.toLowerCase()}.`
       : presetBrand ? `Explore ${presetBrand}.`
+      : vendorName ? `Everything listed by ${vendorName} on Marko.`
       : "Browse the full Marko marketplace.";
     count.textContent = list.length ? "Available products" : "No products found";
     if (shown > list.length) shown = Math.max(PAGE, Math.ceil(list.length / PAGE) * PAGE);

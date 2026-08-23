@@ -3,7 +3,7 @@
 
 import {
   loadCatalog, loadProduct, money, byId, catOf, img,
-  variantsOf, swatchStyle, swatchLabel, isComposite,
+  variantsOf, swatchStyle, swatchLabel, isComposite, colorKey,
   addToBag,
 } from "./shop-data.js";
 import { variantSizeOptions, variantSizeValue } from "./variant-options.js";
@@ -123,12 +123,17 @@ async function initPDP(cat) {
   const variants = variantsOf(p.raw);
   const { field: sizeField, values: sizeValues } = variantSizeOptions(variants);
   const colorGroups = new Map();
-  /* Size-only products must not be presented as though every size were a
-     separate color. Keep color groups empty unless Selldone records an actual
-     color value on at least one variant. */
-  const hasColorOptions = variants.some((variant) => Boolean(variant.color));
-  if (hasColorOptions) variants.forEach((variant) => {
-    const key = variant.color ? String(variant.color).toUpperCase() : `variant-${variant.id}`;
+  /* Only a variant that actually records a colour is a colour choice.
+     Grouping the colourless ones under a `variant-<id>` key turned a bag with
+     one navy variant and three material variants into four swatches, three of
+     them blank grey circles offering a choice that does not exist. Size-only
+     products are excluded by the same rule. */
+  variants.filter((variant) => Boolean(variant.color)).forEach((variant) => {
+    /* Canonical key, not the raw string: Selldone stores the same colour with
+       and without an alpha suffix, and grouping on the raw value rendered
+       `#243B64` and `#243B64ff` as two separate, identical swatches. */
+    const key = colorKey(variant.color);
+    if (!key) return;
     if (!colorGroups.has(key)) colorGroups.set(key, []);
     colorGroups.get(key).push(variant);
   });
@@ -137,9 +142,10 @@ async function initPDP(cat) {
     .sort((a, b) => a.minId - b.minId);
   const requestedVariantId = Number(new URLSearchParams(location.search).get("variant") || 0);
   let selectedVariant = variants.find((v) => Number(v.id) === requestedVariantId) || variants[0] || null;
-  let selectedColorKey = selectedVariant?.color ? String(selectedVariant.color).toUpperCase() : (selectedVariant ? `variant-${selectedVariant.id}` : "");
+  let selectedColorKey = selectedVariant?.color ? colorKey(selectedVariant.color) : "";
   let selectedSize = sizeField ? variantSizeValue(selectedVariant, sizeField) || sizeValues[0] || "" : "";
-  const showSwatches = hasColorOptions && colors.length > 0;
+  /* One colour is not a choice; a selector implying otherwise is noise. */
+  const showSwatches = colors.length >= 2;
   /* A variant's own price/stock when it sets one, the product's otherwise. */
   const priceOf = (v) => (v && v.price > 0 ? v.price - (v.discount || 0) : p.price);
   const stockOf = (v) => (v && Number.isFinite(v.qty) ? v.qty : p.qty);
@@ -148,7 +154,7 @@ async function initPDP(cat) {
   if (railRef) railRef.textContent = `REF ${p.id}`;
 
   root.innerHTML = `
-  <p class="crumb"><a href="index.html">Home</a> &nbsp;/&nbsp; <a href="shop.html?cat=${c.slug}">${esc(c.name)}</a> &nbsp;/&nbsp; ${esc(p.name)}</p>
+  <nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a><span aria-current="page">${esc(p.name)}</span></nav>
   <div class="pdp">
     <div class="gal">
       <div class="thumbs" role="group" aria-label="Gallery views"${gallery.length < 2 ? ' hidden' : ''}>
