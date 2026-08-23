@@ -276,6 +276,45 @@ This project is a fully static Selldone storefront plus browser-side dashboard. 
   storefront, measure the split — `performance.getEntriesByType("resource")`
   filtered to `xapi.selldone.com` gives it directly.
 
+## Product Page
+
+- Three columns: gallery, information, and a buy column that is `position:sticky`
+  from 1024px up. The price lives in that column, next to the control it belongs
+  to. It used to sit at the far left of a full-width fixed bar, a screen away
+  from "Add to bag". The fixed `.buybar` is now phone and tablet only — two
+  persistent buy controls on one screen is one too many.
+- The quantity stepper and the add/buy buttons share one `quantity`. Adding a
+  single unit while the control reads three is the kind of quiet mismatch a
+  shopper only finds in the bag.
+- Section order is product -> what else to buy -> the detail you read before
+  deciding -> more to buy -> proof: frequently-bought-together, similar items,
+  about (overview + specifications), more from this seller, reviews.
+- `pros` renders as Key features with an icon chosen from the benefit's own
+  wording. `warranty`, `lead`, `condition` and `original` render as the buy
+  column's assurances. All four were already in the catalog and none of them
+  were on the page.
+- The product article is only used when it is ABOUT the product. Some records
+  carry copy belonging to a different item and some carry a single stray
+  character, so `overviewHTML` requires a distinctive word from the title to
+  appear in the body before trusting it, and falls back to the category blurb.
+  It also has to come from `products/{id}/info`; `products/list` does not carry
+  `article_pack`, and reading the summary record silently produced the fallback.
+- Cross-sell pairing lives in `shop.config.json`. Selldone's cross-sell is a
+  backoffice feature and XAPI does not expose it to a storefront — five candidate
+  endpoints all 404 and no product field carries it. `pairs` names companions per
+  product and anything unlisted falls back to its department. **No bundle
+  discount is invented**: this storefront cannot apply one at checkout, and a
+  saving that does not happen is a false claim. The button adds every item for
+  real, which is the part the reference implementations get wrong — theirs add
+  only the product being viewed.
+- Review content is demo and says so, because `rate_count` is 0 across this
+  catalog and Selldone returns no review photography. The photo strip reuses the
+  product's own gallery and only appears with three or more images; one photo
+  beside an empty counter reads as a broken grid.
+- Rail controls use the shared `data-rail-prev` / `data-rail-next` contract that
+  `initRailNav` binds. A rail that invents its own attribute names gets buttons
+  with no handler, which is what `check:controls` caught.
+
 ## QA Scripts
 
 The checks assert contracts, not one design's magic numbers. Four of them were

@@ -1216,7 +1216,7 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 
 /* ---------- Product detail ---------- */
-.pdp{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:var(--s9);align-items:start;}
+
 /* Flex, not grid. A product with a single gallery image hides `.thumbs`, and
    in a two-track grid the main image then fell into the 88px thumbnail column
    and rendered at 14px. Flex has no fixed tracks to fall into: with the
@@ -1246,20 +1246,9 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 .galmain img{position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;}
 .pinfo{min-width:0;}
-.pinfo h1{margin:6px 0 8px;font-size:clamp(26px,2.6vw,38px);}
+
 .pline{height:1px;margin:var(--s6) 0;background:var(--line);}
-.product-seller{
-  display:grid;grid-template-columns:40px auto 1fr auto;align-items:center;gap:2px 10px;
-  margin:var(--s5) 0 0;padding:12px 14px;
-  border:1px solid var(--theme-line);border-radius:var(--r-md);background:var(--theme-soft);color:var(--ink);
-}
-.product-seller>span{
-  grid-row:1/3;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;
-  background:var(--theme-primary);color:#fff;font-weight:800;
-}
-.product-seller small{font-size:var(--t-xs);color:var(--ink-2);}
-.product-seller b{grid-column:2/4;font-size:var(--t-md);}
-.product-seller em{grid-column:4;grid-row:1/3;color:var(--theme-primary);font-size:var(--t-sm);font-style:normal;font-weight:700;}
+
 .swatches{display:flex;flex-wrap:wrap;gap:10px;}
 .sw{
   width:34px;height:34px;border:1px solid var(--line-strong);border-radius:50%;
@@ -1307,11 +1296,13 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 .spectable{width:100%;border-collapse:collapse;font-size:var(--t-md);}
 .spectable th,.spectable td{padding:9px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
 .spectable th{width:44%;font-weight:600;color:var(--ink-3);}
+/* The buy column is sticky from 1024px up, so the fixed bar is the phone and
+   tablet equivalent only — two persistent buy controls at once is one too many. */
 .buybar{
   position:fixed;left:0;right:0;bottom:0;z-index:110;display:none;gap:var(--s3);
   padding:var(--s3) var(--pad);background:var(--surface);border-top:1px solid var(--line);box-shadow:var(--e3);
 }
-.buybar.is-on{display:flex;}
+@media (max-width:1023px){ .buybar.is-on{display:flex;} }
 .buybar .btn{flex:1;}
 .sale-countdown{
   display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--r-sm);
@@ -1319,18 +1310,15 @@ html.is-locked,html.is-locked body{overflow:hidden;height:100%;}
 }
 .sale-countdown--card,.sale-countdown--product{position:absolute;z-index:2;left:8px;bottom:8px;}
 .sale-countdown--search{position:static;}
-.related-section{padding:var(--sec-y) 0;border-top:1px solid var(--line);}
-.related-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s5);margin-bottom:var(--s5);}
+
+
 .related-controls{display:flex;gap:var(--s2);}
-.related-controls button{
-  display:grid;place-items:center;width:var(--tap);height:var(--tap);
-  border:1px solid var(--line);border-radius:50%;background:var(--surface);
-}
-.related-controls button:hover{border-color:var(--theme-primary);color:var(--theme-primary);}
+
+
 .related-viewport{overflow:hidden;}
 .related-track{display:flex;gap:var(--gap);transition:transform var(--mid) var(--ease);}
 .related-track>*{flex:0 0 clamp(200px,22vw,260px);}
-.reviews-section{padding:var(--sec-y) 0;border-top:1px solid var(--line);}
+
 .reviews-block{display:grid;gap:var(--s6);}
 .reviews-summary{display:flex;align-items:center;gap:var(--s6);flex-wrap:wrap;}
 .reviews-score{display:flex;align-items:baseline;gap:10px;}
@@ -1858,4 +1846,197 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
   display:inline-flex;align-items:center;justify-content:center;
   min-width:var(--tap);height:var(--tap);flex:0 0 auto;
   color:var(--ink-3);font-size:var(--t-sm);font-weight:700;
+}
+
+/* ==========================================================================
+   18 PRODUCT PAGE
+   Three columns: gallery, information, and a buy column that stays with the
+   shopper. The price used to sit at the far left of a full-width sticky bar,
+   a screen away from the control it belongs to.
+   ========================================================================== */
+.pdp{
+  display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.92fr) 336px;
+  gap:var(--s7);align-items:start;
+}
+.pinfo__label{margin-top:var(--s6);}
+.pinfo h1{margin:6px 0 8px;font-size:clamp(24px,2.3vw,33px);}
+
+/* ---- buy column ---- */
+.buybox{
+  position:sticky;top:132px;padding:var(--s5);
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--e1);
+}
+.buybox__price{font-size:32px;letter-spacing:-.03em;}
+.buybox__price s{font-size:var(--t-lg);}
+.buybox__qty{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:var(--s5) 0 var(--s4);}
+.stepper{display:flex;align-items:center;height:var(--tap);border:1px solid var(--line);border-radius:var(--r-pill);}
+.stepper button{width:var(--tap);height:var(--tap);font-size:17px;color:var(--ink-2);}
+.stepper button:hover{color:var(--theme-primary);}
+.stepper span{min-width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;}
+.buybox .purchase-actions{grid-template-columns:1fr;gap:var(--s2);margin-top:0;}
+.fulfil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:var(--s4);}
+.fulfil div{
+  padding:9px 7px;border:1px solid var(--line);border-radius:var(--r-sm);
+  text-align:center;font-size:10.5px;line-height:1.35;color:var(--ink-3);
+}
+.fulfil div.is-on{border-color:var(--theme-primary);box-shadow:inset 0 0 0 1px var(--theme-primary);}
+.fulfil b{display:block;margin-bottom:2px;font-size:var(--t-sm);color:var(--ink);}
+.buybox__rule{height:1px;margin:var(--s5) 0;background:var(--line);}
+.buybox .assure{display:grid;gap:10px;}
+.buybox .assure div{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;font-size:var(--t-md);color:var(--ink-2);}
+.buybox .assure svg{width:20px;height:20px;fill:none;stroke:var(--theme-primary);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.buybox__secure{margin-top:8px;}
+
+/* The seller was a full-width panel; at this width it only needs to be a chip. */
+.sellerchip{
+  display:flex;align-items:center;gap:9px;min-height:var(--tap);padding:5px 12px 5px 5px;
+  border:1px solid var(--theme-line);border-radius:var(--r-pill);background:var(--theme-soft);
+  color:var(--ink);font-size:var(--t-md);
+}
+.sellerchip i{
+  display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;
+  background:var(--theme-primary);color:#fff;font-style:normal;font-weight:800;font-size:var(--t-md);
+}
+.sellerchip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sellerchip em{margin-left:auto;flex:0 0 auto;color:var(--theme-primary);font-style:normal;font-weight:700;}
+.sellerchip:hover{border-color:var(--theme-primary);}
+
+.paymarks{display:flex;flex-wrap:wrap;gap:5px;margin-top:var(--s4);}
+.paymarks span{
+  display:grid;place-items:center;height:24px;min-width:40px;padding:0 6px;
+  border:1px solid var(--line);border-radius:4px;background:var(--surface);
+  font-size:8.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-3);
+}
+
+/* ---- key features, from the product's own `pros` ---- */
+.keyfeat{margin-top:var(--s7);padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-md);}
+.keyfeat__title{font-size:var(--t-lg);margin-bottom:var(--s4);}
+.keyfeat ul{display:grid;gap:var(--s4);}
+.keyfeat li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;}
+.keyfeat i{
+  display:grid;place-items:center;width:34px;height:34px;border-radius:50%;
+  background:var(--theme-soft);color:var(--theme-primary);
+}
+.keyfeat svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.keyfeat b{display:block;font-size:var(--t-md);}
+.keyfeat p{margin:2px 0 0;color:var(--ink-2);font-size:var(--t-md);line-height:1.55;}
+
+/* ---- page sections below the fold ---- */
+.pdp-sec{padding:var(--sec-y) 0;border-top:1px solid var(--line);}
+.pdp-sec[hidden]{display:none;}
+.reviews-section{background:var(--surface-inverse);color:#fff;border-top:0;}
+
+/* ---- frequently bought together ---- */
+.fbt{
+  display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:var(--s7);align-items:center;
+  padding:var(--s6);border:1px solid var(--theme-line);border-radius:var(--r-md);background:var(--theme-soft);
+}
+.fbt__items{display:flex;align-items:flex-start;gap:var(--s4);flex-wrap:wrap;}
+.fbt__item{width:136px;text-align:center;color:var(--ink);}
+.fbt__item .art{
+  display:block;aspect-ratio:1;padding:8px;border:1px solid var(--line);
+  border-radius:var(--r-sm);background:var(--surface);
+}
+.fbt__item img{width:100%;height:100%;object-fit:contain;}
+.fbt__item b{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+  margin-top:8px;font-size:var(--t-sm);font-weight:600;line-height:1.35;min-height:2.7em;
+}
+.fbt__item:hover b{color:var(--theme-primary);}
+.fbt__price{display:block;margin-top:3px;font-size:var(--t-md);font-weight:800;font-variant-numeric:tabular-nums;}
+.fbt__price s{margin-left:5px;color:var(--ink-3);font-size:var(--t-xs);font-weight:600;}
+.fbt__plus{align-self:center;font-size:20px;font-weight:700;color:var(--ink-3);}
+.fbt__sum{padding:var(--s5);border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);}
+.fbt__row{display:flex;justify-content:space-between;gap:var(--s4);padding:3px 0;font-size:var(--t-md);color:var(--ink-2);}
+.fbt__row--save{color:var(--savings);font-weight:700;}
+.fbt__tot{
+  display:flex;justify-content:space-between;align-items:baseline;gap:var(--s4);
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+}
+.fbt__tot strong{font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.fbt__sum .btn{width:100%;margin-top:var(--s4);}
+
+/* ---- about this item ---- */
+.about{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s8);}
+.about__col h3{font-size:var(--t-xl);margin-bottom:var(--s4);}
+.about__col p{color:var(--ink-2);font-size:var(--t-md);line-height:1.7;}
+.about__col p + p{margin-top:12px;}
+.spectbl{width:100%;border-collapse:collapse;font-size:var(--t-md);}
+.spectbl th,.spectbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
+.spectbl th{width:46%;color:var(--ink-3);font-weight:600;}
+
+.related-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s5);margin-bottom:var(--s5);}
+.related-controls button{
+  display:grid;place-items:center;width:var(--tap);height:var(--tap);
+  border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink-2);
+}
+.related-controls button:hover:not(:disabled){border-color:var(--theme-primary);color:var(--theme-primary);}
+.related-controls button:disabled{opacity:.35;cursor:default;}
+.related-controls svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.reviews-section .related-heading h2{color:#fff;}
+
+/* ---- responsive ---- */
+@media (min-width:1600px){
+  .pdp{grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr) 380px;}
+  .buybox__price{font-size:36px;}
+}
+@media (max-width:1280px){
+  .pdp{grid-template-columns:minmax(0,1fr) 320px;}
+  /* Gallery keeps the left column; information moves under it so the buy
+     column never gets squeezed to an unusable width. */
+  .pinfo{grid-column:1;}
+  .buybox{grid-column:2;grid-row:1 / span 2;}
+}
+@media (max-width:1023px){
+  .pdp{grid-template-columns:minmax(0,1fr);}
+  .buybox{position:static;grid-column:1;grid-row:auto;}
+  .fbt{grid-template-columns:minmax(0,1fr);}
+  .about{grid-template-columns:minmax(0,1fr);gap:var(--s6);}
+}
+@media (max-width:760px){
+  .buybox{padding:var(--s4);}
+  .fbt__item{width:112px;}
+  .fbt__items{gap:var(--s3);}
+  .paymarks span{min-width:36px;font-size:8px;}
+}
+
+/* ---- ratings and reviews ---- */
+.revblock{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s8);align-items:start;}
+.revblock__score strong{display:block;font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:#fff;}
+.revblock__score .review-stars{display:block;margin:8px 0 5px;font-size:17px;color:var(--star);}
+.revblock__score small{color:var(--whisper);font-size:var(--t-md);}
+.revbars{display:grid;gap:7px;margin-top:var(--s5);}
+.revbar{display:grid;grid-template-columns:54px minmax(0,1fr) 40px;gap:10px;align-items:center;font-size:var(--t-sm);color:var(--whisper);}
+.revbar i{display:block;height:8px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.16);}
+.revbar i b{display:block;height:100%;background:var(--star);}
+.revchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:var(--s5);}
+.revchips span{
+  display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 11px;
+  border:1px solid rgba(255,255,255,.2);border-radius:var(--r-pill);
+  font-size:var(--t-sm);font-weight:600;color:#fff;
+}
+.revchips b{color:var(--whisper);font-weight:600;}
+.revphotos{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:10px 0 var(--s6);}
+.revphotos span{display:block;aspect-ratio:1;overflow:hidden;border-radius:var(--r-sm);background:#fff;}
+.revphotos img{width:100%;height:100%;object-fit:contain;padding:6%;}
+/* Same element and same specificity as the rule above, so it has to be scoped
+   or the white photo background wins and the count disappears into it. */
+.revphotos span.revphotos__more{
+  display:grid;place-items:center;background:rgba(255,255,255,.12);
+  color:#fff;font-weight:700;font-size:var(--t-md);
+}
+.revcard{padding:var(--s5) 0;border-top:1px solid rgba(255,255,255,.14);}
+.revcard__top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:var(--t-sm);color:var(--ink-4);}
+.revcard__top .review-stars{color:var(--star);}
+.revcard__verified{color:#7BD8A6;font-weight:700;}
+.revcard h3{margin:8px 0 5px;font-size:var(--t-lg);color:#fff;}
+.revcard p{color:var(--whisper);font-size:var(--t-md);line-height:1.65;}
+.revcard__imgs{display:flex;gap:8px;margin-top:10px;}
+.revcard__imgs img{width:80px;height:80px;object-fit:contain;padding:6px;border-radius:var(--r-sm);background:#fff;}
+.revcard__foot{display:flex;flex-wrap:wrap;gap:8px var(--s5);margin-top:10px;font-size:var(--t-sm);color:var(--ink-4);}
+.revcard__foot b{color:#fff;}
+.revblock__note{margin-top:var(--s5);color:var(--ink-4);font-size:var(--t-sm);}
+@media (max-width:1023px){
+  .revblock{grid-template-columns:minmax(0,1fr);gap:var(--s6);}
+  .revphotos{grid-template-columns:repeat(4,minmax(0,1fr));}
 }

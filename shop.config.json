@@ -264,5 +264,24 @@
       "alt": "Digital camera mounted on a tripod",
       "focus": "50% 46%"
     }
-  ]
+  ],
+  "crossSell": {
+    "$comment": "Selldone's cross-sell is a backoffice feature and XAPI does not expose it to the storefront, so the pairing lives here. `pairs` names companions for specific products; anything not listed falls back to the best-ranked promotion-safe products from the same department. Prices shown are always the live catalog prices — no bundle discount is invented, because a discount this storefront cannot apply at checkout would be a false claim.",
+    "maxItems": 2,
+    "fallback": "same-department",
+    "pairs": {
+      "711071": [
+        711000,
+        711061
+      ],
+      "710766": [
+        710841,
+        710882
+      ],
+      "710882": [
+        710766,
+        710841
+      ]
+    }
+  }
 }

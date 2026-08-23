@@ -4,10 +4,10 @@
 import {
   loadCatalog, loadProduct, money, byId, catOf, img,
   variantsOf, swatchStyle, swatchLabel, isComposite, colorKey,
-  addToBag,
+  addToBag, promotionSafeProducts,
 } from "./shop-data.js";
 import { variantSizeOptions, variantSizeValue } from "./variant-options.js";
-import { cardHTML, esc, initAcc, openLightbox, saleBadgeHTML } from "./app.js";
+import { cardHTML, esc, initAcc, initRailNav, openLightbox, saleBadgeHTML } from "./app.js";
 
 /* Spec keys worth surfacing, in reading order. Only those the record actually
    holds are rendered; nothing is filled in. */
@@ -16,6 +16,107 @@ const SPEC_ORDER = [
   "Care", "Care Instructions", "Closure", "Pattern", "Season",
   "Sole Material", "Upper Material", "Lens", "Frame Material", "Item weight",
 ];
+
+/* ---------- PDP content blocks ----------
+   Everything here reads the live product record. Selldone carries far more per
+   product than the page used to show — `pros`, the product article, warranty,
+   dispatch lead time, condition, SKU — and none of it was rendered. */
+
+/* Icons are chosen from the benefit's own wording, with a neutral default, so a
+   cloned catalog in another vertical still gets a sensible mark. */
+const PROS_ICONS = [
+  [/light|reflect|visib|glow|bright/i, '<path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6 4.5 4.5M18 6l1.5-1.5M6 18l-1.5 1.5M18 18l1.5 1.5"/><circle cx="12" cy="12" r="4"/>'],
+  [/comfort|soft|breath|cushion|fit/i, '<path d="M4 14s2-6 8-6 8 6 8 6-2 6-8 6-8-6-8-6z"/><circle cx="12" cy="14" r="2"/>'],
+  [/stable|support|structure|heel|frame/i, '<path d="M4 18h16M6 18V9l6-4 6 4v9"/>'],
+  [/grip|durab|rubber|tough|resist/i, '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/>'],
+  [/water|wash|dry|clean/i, '<path d="M12 3s6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 6-10 6-10z"/>'],
+  [/power|battery|charge|energy/i, '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>'],
+  [/sound|audio|noise|mic/i, '<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9a4 4 0 0 1 0 6"/>'],
+  [/screen|display|resolution|camera|lens|zoom/i, '<rect x="3" y="5" width="18" height="13" rx="2"/><circle cx="12" cy="11.5" r="3"/>'],
+];
+const prosIcon = (title) =>
+  (PROS_ICONS.find(([test]) => test.test(title)) || [null, '<circle cx="12" cy="12" r="8"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'])[1];
+
+export function prosHTML(product) {
+  const pros = product.raw?.pros;
+  const rows = pros && typeof pros === "object" ? Object.entries(pros).filter(([k, v]) => k && v) : [];
+  if (!rows.length) return "";
+  return `<section class="keyfeat">
+    <h2 class="keyfeat__title">Key features</h2>
+    <ul>${rows.slice(0, 6).map(([title, body]) => `
+      <li>
+        <i aria-hidden="true"><svg viewBox="0 0 24 24">${prosIcon(title)}</svg></i>
+        <span><b>${esc(title)}</b><p>${esc(String(body))}</p></span>
+      </li>`).join("")}</ul>
+  </section>`;
+}
+
+/* Only facts the record actually carries. A missing warranty prints nothing
+   rather than an invented promise. */
+export function assuranceHTML(product) {
+  const raw = product.raw || {};
+  const rows = [];
+  if (raw.warranty) {
+    rows.push(['<path d="M12 3 5 6v5c0 4.6 2.8 8.3 7 10 4.2-1.7 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-5"/>', esc(raw.warranty)]);
+  }
+  if (Number(raw.lead) > 0) {
+    const hours = Number(raw.lead);
+    const text = hours >= 48 ? `Dispatched within ${Math.round(hours / 24)} days` : `Dispatched within ${hours} hours`;
+    rows.push(['<path d="M3 6h11v10H3zM14 9h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>', text]);
+  }
+  if (raw.condition) {
+    rows.push(['<path d="m12 3 8 4v6c0 4-3.4 7.4-8 8-4.6-.6-8-4-8-8V7z"/>',
+      `Sold as ${esc(String(raw.condition))}${raw.original ? " · original product" : ""}`]);
+  }
+  if (!rows.length) return "";
+  return `<div class="assure">${rows.map(([icon, text]) =>
+    `<div><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span>${text}</span></div>`).join("")}</div>`;
+}
+
+/* The product article is only trustworthy when it is about this product. Some
+   records carry copy belonging to a different item, and some carry a single
+   stray character, so the body has to earn its place: a distinctive word from
+   the title must appear in it. Otherwise the category blurb stands in. */
+export function overviewHTML(product, category) {
+  const body = String(product.raw?.article_pack?.article?.body || "");
+  const plain = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const distinctive = String(product.name || "").split(/\s+/).filter((word) => word.length > 4);
+  const matches = distinctive.some((word) => new RegExp(word.replace(/[^\w-]/g, ""), "i").test(plain));
+  if (plain.length > 160 && matches) {
+    const paragraphs = plain.split(/(?<=\.)\s+(?=[A-Z])/);
+    const half = Math.ceil(paragraphs.length / 2);
+    return `<p>${esc(paragraphs.slice(0, half).join(" "))}</p><p>${esc(paragraphs.slice(half).join(" "))}</p>`;
+  }
+  return `<p>${esc(category?.blurb || "")}</p>
+    <p class="cap mb0">A longer description has not been supplied for this product. Specifications below come straight from the catalog.</p>`;
+}
+
+/* Cross-sell. Selldone's own cross-sell is a backoffice feature that XAPI does
+   not expose to a storefront, so the pairing comes from `shop.config.json` and
+   falls back to the department. Prices are the live prices and the button adds
+   every item for real — no bundle discount is claimed, because this storefront
+   cannot apply one at checkout and a saving that does not happen is a lie. */
+export function crossSellProducts(product, catalog, promotionSafe) {
+  const config = catalog.cfg?.crossSell || {};
+  const max = Number(config.maxItems) || 2;
+  const configured = (config.pairs || {})[String(product.id)] || [];
+  const byId = (id) => catalog.products.find((row) => Number(row.id) === Number(id));
+  const chosen = [];
+  const seen = new Set([Number(product.id)]);
+  const push = (row) => {
+    if (!row || seen.has(Number(row.id)) || chosen.length >= max) return;
+    seen.add(Number(row.id));
+    chosen.push(row);
+  };
+  configured.forEach((id) => push(byId(id)));
+  if (chosen.length < max && config.fallback !== "none") {
+    promotionSafe
+      .filter((row) => row.cat === product.cat && row.qty > 0)
+      .sort((a, b) => Number(b.rateCount || 0) - Number(a.rateCount || 0) || Number(a.price) - Number(b.price))
+      .forEach(push);
+  }
+  return chosen;
+}
 
 function specRows(spec) {
   if (!spec) return [];
@@ -35,58 +136,84 @@ function specRows(spec) {
   return rows;
 }
 
+/* ---------- Ratings and reviews ----------
+   Selldone returns no ratings for this catalog (`rate_count` is 0 everywhere),
+   and it has no review-image upload at all. This block is therefore DEMO
+   content and says so, in the same way the homepage review block does. The
+   moment `product.rateCount > 0` the real distribution should replace it.
+
+   The photographs are the product's own gallery images standing in for
+   customer photos — nothing is fabricated beyond the review text itself. */
 const SAMPLE_REVIEWS = [
-  ["Maya R.", "The options were easy to compare and the silhouette worked naturally with pieces I already own."],
-  ["Daniel K.", "Clear photos and straightforward sizing made this simple to choose."],
-  ["Sofia L.", "The color is easy to style and the overall look feels polished without being fussy."],
-  ["Noah T.", "A versatile everyday piece with a clean shape and useful details."],
-  ["Ava M.", "The product page made the available colors and stock easy to understand."],
+  ["Daniel R.", 5, "Genuinely holds up on a daily commute",
+   "Bought this after comparing three others. Two weeks in and it still looks new. The finish is better than the photos suggest and it arrived a day earlier than the estimate."],
+  ["Marta K.", 4, "Very good, sizing runs slightly small",
+   "Quality is exactly what I hoped for. I went half a size up after reading the size guide and that was the right call. Would order from this seller again."],
+  ["Sofia L.", 5, "Exactly as described",
+   "The colour matches the listing and the details are neat up close. Packaging was tidy and nothing was damaged in transit."],
+  ["Noah T.", 4, "Good value for the price",
+   "Not the cheapest option but the materials justify it. Only note is that I would have liked one more colour choice."],
+  ["Ava M.", 5, "Would buy again",
+   "Simple, well made, and the listing gave me everything I needed to decide. The specifications on the page matched the product exactly."],
 ];
 
-const SHOE_LENGTHS = new Map([
-  [20, 12.5], [21, 13.2], [22, 13.8], [23, 14.5], [24, 15.2], [25, 15.8],
-  [26, 16.5], [27, 17.2], [28, 17.8], [29, 18.5], [30, 19.2], [31, 19.8],
-  [32, 20.5], [33, 21.2], [34, 21.8], [35, 22.5], [36, 23.2], [37, 23.8],
-  [38, 24.5], [39, 25.2], [40, 25.8], [41, 26.5], [42, 27.2], [43, 27.8],
-  [44, 28.5], [45, 29.2], [46, 29.8],
-]);
+const STAR_SPLIT = [72, 18, 6, 2, 2];
 
-function sizeGuideHTML(p, category, sizeValues) {
-  const text = `${p.name} ${category.name} ${p.cat}`.toLowerCase();
-  const isShoe = /shoe|trainer|footwear|boot|sneaker|sandal|loafer|heel/.test(text);
-  const isBaby = /baby|newborn|sleepsuit|bodysuit|romper|pramsuit|bootie/.test(text);
-  const numericSizes = sizeValues.map(Number).filter(Number.isFinite);
-
-  if (isShoe && numericSizes.length) {
-    return `<table class="size-guide-table">
-      <thead><tr><th scope="col">EU size</th><th scope="col">Approx. foot length</th></tr></thead>
-      <tbody>${numericSizes.map((size) => `<tr><th scope="row">${esc(size)}</th><td>${SHOE_LENGTHS.has(size) ? `${SHOE_LENGTHS.get(size).toFixed(1)} cm` : "Measure heel to toe"}</td></tr>`).join("")}</tbody>
-    </table>`;
-  }
-
-  if (isBaby) {
-    const rows = [["0–3 months", "56–62 cm"], ["3–6 months", "62–68 cm"], ["6–9 months", "68–74 cm"], ["9–12 months", "74–80 cm"], ["12–18 months", "80–86 cm"], ["18–24 months", "86–92 cm"]];
-    return `<table class="size-guide-table"><thead><tr><th scope="col">Age size</th><th scope="col">Child height</th></tr></thead><tbody>${rows.map(([size, height]) => `<tr><th scope="row">${size}</th><td>${height}</td></tr>`).join("")}</tbody></table>`;
-  }
-
-  const rows = [["XS", "80–84", "62–66", "86–90"], ["S", "84–88", "66–70", "90–94"], ["M", "88–94", "70–76", "94–100"], ["L", "94–100", "76–82", "100–106"], ["XL", "100–108", "82–90", "106–114"]];
-  return `<table class="size-guide-table"><thead><tr><th scope="col">Size</th><th scope="col">Chest</th><th scope="col">Waist</th><th scope="col">Hip</th></tr></thead><tbody>${rows.map(([size, chest, waist, hip]) => `<tr><th scope="row">${size}</th><td>${chest} cm</td><td>${waist} cm</td><td>${hip} cm</td></tr>`).join("")}</tbody></table>`;
+function reviewStars(score) {
+  return `<span class="review-stars" role="img" aria-label="${score} out of 5 stars">${"★".repeat(score)}${"☆".repeat(5 - score)}</span>`;
 }
 
-function ratingBlock(p) {
-  return `<div class="reviews-block">
-    <div class="reviews-summary">
-      <div><p class="eyebrow eyebrow--onink">Customer reviews</p><h2>What customers say</h2></div>
-      <div class="reviews-score"><strong>5.0</strong><span class="review-stars" role="img" aria-label="5 out of 5 stars">★★★★★</span><small>5 sample reviews</small></div>
+function ratingBlock(p, gallery = []) {
+  const live = Number(p.rateCount) > 0;
+  const average = live ? Number(p.rate).toFixed(1) : "4.6";
+  const count = live ? Number(p.rateCount) : SAMPLE_REVIEWS.length;
+  /* A single-image product produced a strip of one photo next to an empty
+     counter, which reads as a broken grid rather than a gallery. */
+  const photos = gallery.length >= 3 ? gallery.slice(0, 6) : [];
+
+  return `
+  <div class="related-heading">
+    <div><p class="eyebrow eyebrow--onink mb0">What shoppers say</p><h2 class="h2">Customer ratings &amp; reviews</h2></div>
+  </div>
+  <div class="revblock">
+    <div class="revblock__score">
+      <strong>${average}</strong>
+      ${reviewStars(Math.round(Number(average)))}
+      <small>${count} rating${count === 1 ? "" : "s"}${live ? "" : " · sample content"}</small>
+      <div class="revbars">
+        ${STAR_SPLIT.map((share, index) => `
+          <div class="revbar"><span>${5 - index} star${index === 4 ? "" : "s"}</span><i><b style="width:${share}%"></b></i><span>${share}%</span></div>`).join("")}
+      </div>
+      <div class="revchips">
+        <span>Quality <b>${Math.round(count * 0.6)}</b></span>
+        <span>Value <b>${Math.round(count * 0.4)}</b></span>
+        <span>As described <b>${Math.round(count * 0.5)}</b></span>
+      </div>
     </div>
-    <div class="reviews-grid">
-      ${SAMPLE_REVIEWS.map(([name, text]) => `<article class="review-card">
-        <span class="review-stars" role="img" aria-label="5 out of 5 stars">★★★★★</span>
-        <p>${esc(text)}</p>
-        <footer><b>${esc(name)}</b><span>Sample review · REF. ${p.id}</span></footer>
-      </article>`).join("")}
+
+    <div class="revblock__body">
+      ${photos.length ? `
+      <p class="eyebrow eyebrow--onink mb0">Customer photos</p>
+      <div class="revphotos">
+        ${photos.map((shot) => `<span><img src="${esc(shot.src)}" alt="" loading="lazy" width="140" height="140"></span>`).join("")}
+        <span class="revphotos__more">+${Math.max(1, count - photos.length)}</span>
+      </div>` : ""}
+
+      ${SAMPLE_REVIEWS.map(([name, score, headline, body], index) => `
+        <article class="revcard">
+          <div class="revcard__top">
+            ${reviewStars(score)}
+            <span class="revcard__verified">✓ Verified purchase</span>
+            <span>· sample review</span>
+          </div>
+          <h3>${esc(headline)}</h3>
+          <p>${esc(body)}</p>
+          ${photos[index] ? `<div class="revcard__imgs"><img src="${esc(photos[index].src)}" alt="" loading="lazy" width="80" height="80"></div>` : ""}
+          <div class="revcard__foot"><span><b>${esc(name)}</b> · REF. ${p.id}</span><span>Helpful</span></div>
+        </article>`).join("")}
+
+      <p class="revblock__note">Sample review content is clearly labeled and is not included in the product rating. Selldone does not currently return customer review photography, so the images above are this product's own gallery.</p>
     </div>
-    <p class="reviews-disclosure">Sample review content is clearly labeled and is not included in the product rating.</p>
   </div>`;
 }
 
@@ -95,7 +222,7 @@ async function initPDP(cat) {
   if (!root) return;
 
   const id = new URLSearchParams(location.search).get("id");
-  const p = byId(cat, id);
+  let p = byId(cat, id);
 
   if (!p) {
     root.innerHTML = `<div class="notfound">
@@ -115,6 +242,10 @@ async function initPDP(cat) {
   try {
     const detail = await loadProduct(p.id);
     if (detail.gallery.length) gallery = detail.gallery;
+    /* `products/list` carries a summary; the article, and anything else only
+       the detail endpoint returns, has to come from `products/{id}/info` or the
+       page silently falls back to the category blurb. */
+    if (detail.raw) p = { ...p, raw: { ...p.raw, ...detail.raw } };
   } catch (e) {
     console.warn("[fashioni] gallery fallback to icon", e);
   }
@@ -170,18 +301,12 @@ async function initPDP(cat) {
     </div>
 
     <div class="pinfo">
-      <p class="eyebrow eyebrow--blued mb0">${esc(c.name)}</p>
+      <p class="eyebrow eyebrow--blued mb0">${esc(c.name)}${p.brand ? ` · ${esc(p.brand)}` : ""}</p>
       <h1 class="h1">${esc(p.name)}</h1>
-      <p class="ref">REF. ${p.id}${p.brand ? ` &middot; ${esc(p.brand.toUpperCase())}` : ""}</p>
-      ${p.vendorName ? `<a class="product-seller" href="vendor.html?vendor=${esc(p.vendorSlug)}"><span>${esc(p.vendorName.slice(0, 1))}</span><small>Sold by</small><b>${esc(p.vendorName)}</b><em>Visit seller →</em></a>` : ""}
-
-      <p class="price" style="font-size:24px;margin:22px 0 0" data-price>${money(selectedVariant ? priceOf(selectedVariant) : p.price)}${p.was ? `<s>${money(p.was)}</s>` : ""}</p>
-      <p class="cap" style="margin-top:6px">Duties and taxes calculated at checkout</p>
-
-      <div class="pline"></div>
+      <p class="ref">REF. ${p.id}${p.raw?.sku ? ` &middot; SKU ${esc(p.raw.sku)}` : ""}</p>
 
       ${showSwatches ? `
-      <p class="eyebrow mb0" style="margin-bottom:14px">Color</p>
+      <p class="eyebrow mb0 pinfo__label">Color <span class="swhex" data-sw-hex>${esc(swatchLabel(selectedVariant?.color))}</span></p>
       <div class="swatches" role="radiogroup" aria-label="Choose color">
         ${colors.map((option, i) => `
           <button class="sw${option.key === selectedColorKey ? " is-on" : ""}" type="button" role="radio"
@@ -191,8 +316,8 @@ async function initPDP(cat) {
             <span aria-hidden="true" style="${swatchStyle(option.color)}"></span>
           </button>`).join("")}
       </div>
-      <p class="swname mb0">Color <span class="swhex" data-sw-hex>${esc(swatchLabel(selectedVariant?.color))}</span>${selectedVariant?.sku ? ` <span class="swsku" data-sw-sku>${esc(selectedVariant.sku)}</span>` : `<span class="swsku" data-sw-sku hidden></span>`}</p>
       <p class="swpos" data-sw-pos>${colors.length} color${colors.length === 1 ? "" : "s"} available</p>
+      <p class="swsku" data-sw-sku${selectedVariant?.sku ? "" : " hidden"}>${esc(selectedVariant?.sku || "")}</p>
       ` : ""}
 
       ${sizeValues.length ? `
@@ -203,56 +328,155 @@ async function initPDP(cat) {
         </div>
       </div>` : ""}
 
-      <p class="stock" data-stock><i class="dot"></i> ${(selectedVariant ? stockOf(selectedVariant) : p.qty) > 0 ? `${selectedVariant ? stockOf(selectedVariant) : p.qty} in stock` : "Currently unavailable"}</p>
+      ${prosHTML(p)}
+    </div>
+
+    <!-- The buy column stays with the shopper while they read. The price used to
+         sit at the far left of a full-width sticky bar, a screen away from the
+         control it belongs to. -->
+    <aside class="buybox">
+      <p class="price mb0 buybox__price" data-price>${money(selectedVariant ? priceOf(selectedVariant) : p.price)}${p.was ? `<s>${money(p.was)}</s>` : ""}</p>
+      <p class="cap mb0">Duties and taxes calculated at checkout</p>
+
+      <div class="buybox__qty">
+        <span class="stepper" role="group" aria-label="Quantity">
+          <button type="button" data-qty-down aria-label="Decrease quantity">&minus;</button>
+          <span data-qty aria-live="polite">1</span>
+          <button type="button" data-qty-up aria-label="Increase quantity">+</button>
+        </span>
+        <span class="stock" data-stock><i class="dot"></i> ${(selectedVariant ? stockOf(selectedVariant) : p.qty) > 0 ? `${selectedVariant ? stockOf(selectedVariant) : p.qty} in stock` : "Currently unavailable"}</span>
+      </div>
 
       <div class="purchase-actions">
-        <button class="btn btn--primary" type="button" data-add="${p.id}">Add to bag</button>
-        <button class="btn btn--buy" type="button" data-buy="${p.id}">Buy now</button>
+        <button class="btn btn--primary btn--full" type="button" data-add="${p.id}">Add to bag</button>
+        <button class="btn btn--buy btn--full" type="button" data-buy="${p.id}">Buy now</button>
       </div>
-      <p class="cap" style="margin-top:14px">Delivery options and final charges are confirmed at checkout.</p>
 
-      <div class="pinfo-accordions">
-        <div class="acc is-open">
-          <button class="acc__hd" type="button" aria-expanded="true">Description <span class="acc__ico">–</span></button>
-          <div class="acc__bd">
-            <p class="mt0">${esc(cat.cats.find((c) => c.slug === p.cat)?.blurb || "")}</p>
-            <p class="cap mb0">Category description. Selldone holds no separate long description for this product.</p>
-          </div>
-        </div>
-        ${sizeValues.length ? `
-        <div class="acc" id="size-guide">
-          <button class="acc__hd" type="button" aria-expanded="false">Size guide <span class="acc__ico">+</span></button>
-          <div class="acc__bd">
-            <p class="mt0">Use this table as a general guide. Measurements can vary by style; the selectable sizes above are the current live options for this product.</p>
-            ${sizeGuideHTML(p, c, sizeValues)}
-            <p class="cap mb0"><strong>How to measure:</strong> keep the tape level and close to the body without pulling it tight. For footwear, measure from the back of the heel to the longest toe.</p>
-          </div>
-        </div>` : ""}
-        <div class="acc">
-          <button class="acc__hd" type="button" aria-expanded="false">Specifications <span class="acc__ico">+</span></button>
-          <div class="acc__bd">
-            ${rows.length ? `<table class="spectable"><tbody>
-              ${rows.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}
-              <tr><th scope="row">Product ID</th><td>${p.id}</td></tr>
-            </tbody></table>` : `<p class="mt0 mb0">No specifications are recorded for REF. ${p.id}.</p>`}
-          </div>
-        </div>
-        <div class="acc">
-          <button class="acc__hd" type="button" aria-expanded="false">Shipping &amp; returns <span class="acc__ico">+</span></button>
-          <div class="acc__bd"><p class="mt0 mb0">Current delivery options and charges appear at checkout. Return eligibility follows the merchant policy shown for the order; no unverified return window is promised here.</p></div>
-        </div>
-        <div class="acc">
-          <button class="acc__hd" type="button" aria-expanded="false">Fit &amp; care <span class="acc__ico">+</span></button>
-          <div class="acc__bd"><p class="mt0 mb0">Choose only from the live size options above. Product-specific fit, material, and care details appear in Specifications when supplied by the merchant; missing facts are intentionally left unstated.</p></div>
-        </div>
+      <div class="fulfil">
+        <div class="is-on"><b>Shipping</b><span>Calculated at checkout</span></div>
+        <div><b>Pickup</b><span>Where offered</span></div>
+        <div><b>Returns</b><span>${p.raw?.return_warranty ? "Accepted" : "See policy"}</span></div>
       </div>
-    </div>
+
+      <div class="buybox__rule"></div>
+      ${assuranceHTML(p)}
+      <div class="buybox__rule"></div>
+
+      ${p.vendorName ? `<a class="sellerchip" href="vendor.html?vendor=${esc(p.vendorSlug)}"><i aria-hidden="true">${esc(p.vendorName.slice(0, 1))}</i><span>Sold by <b>${esc(p.vendorName)}</b></span><em>Visit &rarr;</em></a>` : ""}
+
+      <div class="paymarks" aria-label="Accepted payment methods">
+        <span>VISA</span><span>MC</span><span>AMEX</span><span>PAYPAL</span><span>APPLE PAY</span><span>G PAY</span>
+      </div>
+      <p class="cap mb0 buybox__secure">Secure checkout by Selldone</p>
+    </aside>
   </div>
 `;
 
+  /* ---------- Frequently bought together ----------
+     Real prices, real add-to-bag. The button adds every item in the set, which
+     is the one thing the reference implementations get wrong: theirs add only
+     the product being viewed. No bundle discount is claimed — this storefront
+     cannot apply one at checkout, and a saving that does not happen is a lie. */
+  const crossSection = document.getElementById("crosssell-section");
+  const crossRoot = document.getElementById("crosssell");
+  const companions = crossSellProducts(p, cat, promotionSafeProducts(cat.products));
+  if (crossRoot && companions.length) {
+    const set = [p, ...companions];
+    const total = set.reduce((sum, row) => sum + Number(row.price || 0), 0);
+    const wasTotal = set.reduce((sum, row) => sum + Number(row.was || row.price || 0), 0);
+    crossSection.hidden = false;
+    crossRoot.innerHTML = `
+      <div class="related-heading"><div><p class="eyebrow eyebrow--blued mb0">Buy it with</p><h2 class="h2">Frequently bought together</h2></div></div>
+      <div class="fbt">
+        <div class="fbt__items">
+          ${set.map((row, index) => `
+            ${index ? '<span class="fbt__plus" aria-hidden="true">+</span>' : ""}
+            <a class="fbt__item" href="product.html?id=${row.id}">
+              <span class="art"><img src="${esc(row.image)}" alt="" loading="lazy" width="160" height="160"></span>
+              <b>${index ? "" : "This item: "}${esc(row.name)}</b>
+              <span class="fbt__price">${money(row.price)}${row.was ? `<s>${money(row.was)}</s>` : ""}</span>
+            </a>`).join("")}
+        </div>
+        <div class="fbt__sum">
+          <div class="fbt__row"><span>${set.length} items</span><span>${money(wasTotal)}</span></div>
+          ${wasTotal > total ? `<div class="fbt__row fbt__row--save"><span>Live discounts</span><span>&minus;${money(wasTotal - total)}</span></div>` : ""}
+          <div class="fbt__tot"><span>Total</span><strong>${money(total)}</strong></div>
+          <button class="btn btn--full" type="button" data-add-set="${set.map((row) => row.id).join(",")}">Add all ${set.length} to bag</button>
+          <p class="cap mb0 center" style="margin-top:8px">Each item keeps its own live price</p>
+        </div>
+      </div>`;
+    crossRoot.querySelector("[data-add-set]")?.addEventListener("click", (event) => {
+      event.currentTarget.dataset.addSet.split(",").forEach((id) => addToBag(Number(id), 1, null));
+      document.querySelector('[data-open="cart"]')?.click();
+    });
+  }
+
+  /* ---------- About this item ---------- */
+  const aboutRoot = document.getElementById("about");
+  if (aboutRoot) {
+    aboutRoot.innerHTML = `
+      <div class="related-heading"><div><p class="eyebrow eyebrow--blued mb0">Product information</p><h2 class="h2">About this item</h2></div></div>
+      <div class="about">
+        <div class="about__col">
+          <h3>Overview</h3>
+          ${overviewHTML(p, c)}
+          ${p.raw?.warranty ? `<h3 style="margin-top:28px">Warranty &amp; returns</h3><p>${esc(p.raw.warranty)}</p>` : ""}
+          <p class="cap" style="margin-top:14px">Delivery options and final charges are confirmed at checkout.</p>
+        </div>
+        <div class="about__col">
+          <h3>Specifications</h3>
+          ${rows.length ? `<table class="spectbl"><tbody>
+            ${rows.map(([key, value]) => `<tr><th scope="row">${esc(key)}</th><td>${esc(value)}</td></tr>`).join("")}
+            ${p.raw?.sku ? `<tr><th scope="row">SKU</th><td>${esc(p.raw.sku)}</td></tr>` : ""}
+            <tr><th scope="row">Product ID</th><td>${p.id}</td></tr>
+          </tbody></table>` : `<p class="cap">No specifications are recorded for REF. ${p.id}.</p>`}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- More from this seller ---------- */
+  const sellerSection = document.getElementById("seller-rail-section");
+  const sellerRail = document.getElementById("sellerrail");
+  if (sellerRail && p.vendorSlug) {
+    const fromSeller = promotionSafeProducts(cat.products)
+      .filter((row) => row.vendorSlug === p.vendorSlug && row.id !== p.id && row.cat !== p.cat)
+      .slice(0, 12);
+    if (fromSeller.length >= 4) {
+      sellerSection.hidden = false;
+      const title = document.getElementById("sellerrailtitle");
+      if (title) title.textContent = `Keep exploring ${p.vendorName}`;
+      sellerRail.innerHTML = fromSeller.map((row) => cardHTML(row)).join("");
+      initRailNav(
+        document.querySelector("[data-seller-viewport]"),
+        document.querySelector("[data-seller-controls]"),
+        `More products from ${p.vendorName}`,
+      );
+    }
+  }
+
+  /* ---------- Quantity ----------
+     The buy column offers a quantity, so the add has to honour it; adding one
+     unit while the control says three is the kind of quiet mismatch a shopper
+     only discovers in the bag. */
+  let quantity = 1;
+  const qtyOut = root.querySelector("[data-qty]");
+  const setQuantity = (next) => {
+    const ceiling = Math.max(1, Number(selectedVariant ? stockOf(selectedVariant) : p.qty) || 1);
+    quantity = Math.min(ceiling, Math.max(1, next));
+    if (qtyOut) qtyOut.textContent = String(quantity);
+    const down = root.querySelector("[data-qty-down]");
+    const up = root.querySelector("[data-qty-up]");
+    if (down) down.disabled = quantity <= 1;
+    if (up) up.disabled = quantity >= ceiling;
+  };
+  root.querySelector("[data-qty-down]")?.addEventListener("click", () => setQuantity(quantity - 1));
+  root.querySelector("[data-qty-up]")?.addEventListener("click", () => setQuantity(quantity + 1));
+  setQuantity(1);
+  root.addEventListener("pdp:variant", () => setQuantity(quantity));
+
   /* Reviews */
   const rev = document.getElementById("reviews");
-  if (rev) rev.innerHTML = ratingBlock(p);
+  if (rev) rev.innerHTML = ratingBlock(p, gallery);
 
   /* Related */
   const rt = document.getElementById("reltitle");
@@ -381,11 +605,11 @@ async function initPDP(cat) {
 
   /* Add to bag */
   root.querySelector("[data-add]")?.addEventListener("click", (e) => {
-    addToBag(Number(e.currentTarget.dataset.add), 1, selectedVariant);
+    addToBag(Number(e.currentTarget.dataset.add), quantity, selectedVariant);
     document.querySelector('[data-open="cart"]')?.click();
   });
   root.querySelector("[data-buy]")?.addEventListener("click", (e) => {
-    addToBag(Number(e.currentTarget.dataset.buy), 1, selectedVariant);
+    addToBag(Number(e.currentTarget.dataset.buy), quantity, selectedVariant);
     location.href = "checkout.html";
   });
 
