@@ -16,7 +16,7 @@ const AUDIT_SRC = readFileSync(
 
 const BASE = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
 const PAGES=[["home","/","#catgrid .home-dept-card"],["shop","/shop.html","#pgrid .pcard"],
-             ["product","/product.html?id=711002","#pdp h1"],["checkout","/checkout.html","#sumrows .sum__row"],
+             ["product","/product.html?id=711002","#pdp h1"],["checkout","/checkout.html","#continueCheckout"],
              ["about","/about-us",".prose h2"],["terms","/terms",".prose h2"],
              ["privacy","/privacy",".prose h2"],["contact","/contact-us",".prose h2"],
              ["blog","/blog",".post"],["article","/article.html?id=31667","[data-article-body] p"],

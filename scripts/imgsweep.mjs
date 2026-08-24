@@ -162,7 +162,7 @@ await p.waitForSelector("#pgrid .pcard"); await prime(p);
 report("shop grid", await p.evaluate(MEASURE));
 
 await p.goto(BASE + page_("/checkout"), { waitUntil: "domcontentloaded" });
-await p.waitForSelector("#sumrows .sum__row"); await p.waitForTimeout(1000);
+await p.waitForSelector("#continueCheckout"); await p.waitForTimeout(1000);
 report("checkout summary", await p.evaluate(MEASURE));
 
 // every product page

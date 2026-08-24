@@ -18,7 +18,7 @@ const SPEC_ORDER = [
 ];
 
 /* ---------- PDP content blocks ----------
-   Everything here reads the live product record. Selldone carries far more per
+   Everything here reads the live product record. the commerce platform carries far more per
    product than the page used to show — `pros`, the product article, warranty,
    dispatch lead time, condition, SKU — and none of it was rendered. */
 
@@ -176,7 +176,7 @@ function specRows(spec) {
 
 
 /* ---------- Ratings and reviews ----------
-   Selldone returns no ratings for this catalog (`rate_count` is 0 everywhere),
+   the commerce platform returns no ratings for this catalog (`rate_count` is 0 everywhere),
    and it has no review-image upload at all. This block is therefore DEMO
    content and says so, in the same way the homepage review block does. The
    moment `product.rateCount > 0` the real distribution should replace it.
@@ -254,7 +254,7 @@ function ratingBlock(p, gallery = []) {
           <div class="revcard__foot"><span><b>${esc(name)}</b> · REF. ${p.id}</span><span>Helpful</span></div>
         </article>`).join("")}
 
-      <p class="revblock__note">Sample review content is clearly labeled and is not included in the product rating. Selldone does not currently return customer review photography, so the images above are this product's own gallery.</p>
+      <p class="revblock__note">Sample review content is clearly labeled and is not included in the product rating. The platform does not currently return customer review photography, so the images above are this product's own gallery.</p>
     </div>
   </div>`;
 }
@@ -421,7 +421,7 @@ async function initPDP(cat) {
       <div class="paymarks" aria-label="Accepted payment methods">
         <span>VISA</span><span>MC</span><span>AMEX</span><span>PAYPAL</span><span>APPLE PAY</span><span>G PAY</span>
       </div>
-      <p class="cap mb0 buybox__secure">Secure checkout by Selldone</p>
+      <p class="cap mb0 buybox__secure">Secure checkout by the commerce platform</p>
     </aside>
   </div>
 `;
@@ -581,7 +581,7 @@ async function initPDP(cat) {
     openLightbox(gallery[current].src, gallery[current].alt));
 
   /* Deterministic media relation. Color groups are ordered by their smallest
-     Selldone variant id, then assigned distinct gallery entries. Every size
+     the commerce platform variant id, then assigned distinct gallery entries. Every size
      row of the same color shares that color image. A real variant image wins. */
   const galleryIndexByVariantId = new Map();
   colors.forEach((option, colorIndex) => {

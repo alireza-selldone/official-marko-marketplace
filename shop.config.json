@@ -228,11 +228,11 @@
   "spotlight": {
     "mode": "highest-price"
   },
-  "$contactComment": "Marko is a demonstration marketplace, not a trading entity. These are placeholders reserved for exactly this purpose: the number is in Ofcom's reserved drama range (+44 20 7946 0xxx) and can never reach a real person, and EC1A 1BB is Royal Mail's own documented example postcode. Nothing here is a fabricated credential presented as genuine, which is why registration stays null rather than carrying an invented company number. A real deployment replaces every value and sets isDemonstration to false.",
+  "$contactComment": "Marko is a demonstration marketplace, not a trading entity. These are placeholders reserved for exactly this purpose: the address uses the .example TLD that RFC 2606 reserves for documentation, the number is in Ofcom's reserved drama range (+44 20 7946 0xxx) and can never reach a real person, and EC1A 1BB is Royal Mail's own documented example postcode. Nothing here is a fabricated credential presented as genuine, which is why registration stays null rather than carrying an invented company number. A real deployment replaces every value and sets isDemonstration to false.",
   "contact": {
     "isDemonstration": true,
     "entity": "Marko Marketplace",
-    "email": "hello@marko.selldone.shop",
+    "email": "hello@marko.example",
     "phone": "+44 20 7946 0142",
     "address": "1 Example Street, London EC1A 1BB, United Kingdom",
     "hours": "Monday to Friday, 09:00-17:00 GMT",

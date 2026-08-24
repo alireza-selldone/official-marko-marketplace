@@ -873,6 +873,20 @@ export function addToBag(id, qty = 1, variant = null) {
 export function removeFromBag(id) {
   writeBag(readBag().filter((r) => r.id !== Number(id)));
 }
+/* Variant-aware, unlike removeFromBag above: two sizes of the same product are
+   two lines, and the checkout has to change one without touching the other. */
+export function setBagQty(id, variantId, qty) {
+  const wanted = Number(variantId) || null;
+  const next = Number(qty);
+  const rows = readBag().reduce((out, row) => {
+    const match = row.id === Number(id) && (row.variantId || null) === wanted;
+    if (!match) out.push(row);
+    else if (next > 0) out.push({ ...row, qty: next });
+    return out;
+  }, []);
+  writeBag(rows);
+  return rows;
+}
 export const bagCount = () => readBag().reduce((n, r) => n + r.qty, 0);
 export function bagLines(cat) {
   return readBag()

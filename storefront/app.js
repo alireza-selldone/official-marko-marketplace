@@ -64,7 +64,7 @@ function startSaleCountdowns() {
    replacement runs before any header behavior is wired, so the live interface
    is identical everywhere and future chrome changes have one source. */
 const SHARED_PLATFORM_BAR_HTML = `<div class="sdbar" data-shared-platform="v1">
-  <p class="sdbar__in"><svg class="sdbar__hx" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.7 4.4 13a4.8 4.8 0 0 1 6.8-6.8l.8.8.8-.8A4.8 4.8 0 1 1 19.6 13Z"/></svg><span class="sdbar__made">Made with</span><a href="https://selldone.com" rel="noopener">Selldone</a></p>
+  <p class="sdbar__in"><svg class="sdbar__hx" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.3 7 10 4.2-1.7 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-5"/></svg><span class="sdbar__made">Buyer protection on every order</span></p>
 </div>`;
 
 const SHARED_HEADER_HTML = `<header class="hdr fashioni-header market-header" data-shared-chrome="v3">
@@ -84,10 +84,10 @@ const SHARED_HEADER_HTML = `<header class="hdr fashioni-header market-header" da
   </nav><div class="mega-overlay" data-mega-overlay></div><div class="mega" aria-hidden="true"><div class="mega__grid" id="megagrid"></div></div></div>
 </header>`;
 
-const SHARED_FOOTER_HTML = `<footer class="ft ink market-footer"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo market-logo">marko<span>✦</span></p><p class="lede" data-brand-tagline>Everything you need, from people you can trust.</p></div><div class="ft__col ft__departments"><h4>Departments</h4><div class="ft__links-split" data-collections></div></div><div class="ft__col"><h4>Shop</h4><ul><li><a href="vendors.html">Our sellers</a></li><li><a href="brands.html">Brands</a></li></ul></div><div class="ft__col"><h4>Customer care</h4><ul><li><a href="/about-us">About Marko</a></li><li><a href="/terms#delivery">Delivery</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Marko Marketplace</span><span>Secure commerce by Selldone</span></div></div></footer>`;
+const SHARED_FOOTER_HTML = `<footer class="ft ink market-footer"><div class="wrap"><div class="ft__cols"><div class="ft__col ft__brand"><p class="logo market-logo">marko<span>✦</span></p><p class="lede" data-brand-tagline>Everything you need, from people you can trust.</p></div><div class="ft__col ft__departments"><h4>Departments</h4><div class="ft__links-split" data-collections></div></div><div class="ft__col"><h4>Shop</h4><ul><li><a href="vendors.html">Our sellers</a></li><li><a href="brands.html">Brands</a></li></ul></div><div class="ft__col"><h4>Customer care</h4><ul><li><a href="/about-us">About Marko</a></li><li><a href="/terms#delivery">Delivery</a></li><li><a href="/terms#returns">Returns</a></li><li><a href="/contact-us">Contact us</a></li></ul></div></div><div class="ft__bar"><span>© 2026 Marko Marketplace</span><span>Secure commerce</span></div></div></footer>`;
 
 const SHARED_OVERLAYS_HTML = `<div class="drawer ink" role="dialog" aria-modal="true" aria-label="Menu" aria-hidden="true"><div class="drawer__top"><span class="eyebrow">Menu</span><button class="xbtn" type="button" data-close>Close</button></div><nav data-drawer-nav aria-label="Mobile"></nav></div>
-<aside class="cart" role="dialog" aria-modal="true" aria-label="Shopping bag" aria-hidden="true"><div class="cart__hd"><span class="eyebrow mb0" data-cart-label>Your bag · 0</span><button class="xbtn" type="button" data-close>Close</button></div><div class="cart__body" data-cart-body></div><div class="cart__ft" data-cart-foot hidden><div class="sum__tot"><span class="eyebrow mb0">Subtotal</span><span class="price" data-cart-total>$0</span></div><a class="btn btn--full" href="checkout.html">Checkout</a><p class="cap center">Delivery, taxes, and payment are confirmed by Selldone.</p></div></aside>
+<aside class="cart" role="dialog" aria-modal="true" aria-label="Shopping bag" aria-hidden="true"><div class="cart__hd"><span class="eyebrow mb0" data-cart-label>Your bag · 0</span><button class="xbtn" type="button" data-close>Close</button></div><div class="cart__body" data-cart-body></div><div class="cart__ft" data-cart-foot hidden><div class="sum__tot"><span class="eyebrow mb0">Subtotal</span><span class="price" data-cart-total>$0</span></div><a class="btn btn--full" href="checkout.html">Checkout</a><p class="cap center">Delivery, taxes, and payment are confirmed at checkout.</p></div></aside>
 <aside class="sheet sheet--search" role="dialog" aria-modal="true" aria-label="Search products" aria-hidden="true"><div class="sheet__hd"><span class="eyebrow mb0">Search Marko</span><button class="xbtn" type="button" data-close>Close</button></div><div class="sheet__pad"><label class="sr" for="q">Search products</label><input id="q" type="search" autocomplete="off" placeholder="Product, brand, or category" data-search-input data-autofocus /><p class="cap" data-search-count></p></div><div class="sheet__body" data-search-results></div></aside>
 <aside class="sheet sheet--account" role="dialog" aria-modal="true" aria-label="Account" aria-hidden="true"><div class="sheet__hd"><span class="eyebrow mb0">Account</span><button class="xbtn" type="button" data-close>Close</button></div><div class="sheet__body" data-account-body></div></aside>
 <div class="scrim"></div>`;
@@ -304,7 +304,7 @@ function fillContactDetails(cfg) {
   /* One sentence, shown wherever a page would otherwise imply a trading entity. */
   document.querySelectorAll("[data-legal-status]").forEach((el) => {
     if (!c.isDemonstration) { el.remove(); return; }
-    el.textContent = "Marko is a demonstration marketplace built on Selldone. "
+    el.textContent = "Marko is a demonstration marketplace. "
       + "It is not a registered trading company, the contact details below are "
       + "reserved documentation placeholders, and no order placed here is a real "
       + "purchase.";
@@ -963,7 +963,7 @@ const SIGNIN_NOTE = `<div class="setupnote">
   <span class="setupnote__k">Building your own shop?</span>
   <p>Direct sign-in only works once the shop owner has set an email address under
      <b>Store dashboard → Settings → Email</b>. Until then, customers are sent to
-     Selldone to create an account there instead of signing in to the shop itself.</p>
+     the account provider to register there instead of signing in to the shop itself.</p>
   <p>It is a shop-level setting, so a visitor cannot change it.</p>
 </div>`;
 
@@ -989,7 +989,7 @@ async function renderAccount() {
   if (!s.authenticated) {
     body.innerHTML = `<div class="acct">
       <p class="lede" style="margin-bottom:8px">Sign in to see your orders and saved addresses.</p>
-      <p class="cap" style="margin-bottom:24px">Use your Selldone customer account to continue securely.</p>
+      <p class="cap" style="margin-bottom:24px">Use your Marko customer account to continue securely.</p>
       <button class="btn btn--full" type="button" data-signin>Sign in</button>
       <p class="cap center" style="margin-top:14px">New here? <button class="linkish" type="button" data-signin>Create account</button></p>
       ${SIGNIN_NOTE}
@@ -1110,7 +1110,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     CAT = await loadCatalog();
   } catch (err) {
-    showCatalogError("The catalog could not be loaded from Selldone.");
+    showCatalogError("The catalog could not be loaded.");
     console.error("[marko] catalog load failed", err);
     return;
   }

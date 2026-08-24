@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Checkout — Marko</title>
-    <meta name="description" content="Secure checkout hand-off for Marko, backed by the live Selldone basket." />
+    <meta name="description" content="Secure checkout hand-off for Marko, backed by the live commerce basket." />
     <meta name="shop-name" content="Marko" />
     <meta name="pajulina-app-name" content="Marko Storefront" />
     <meta name="pajulina-client-id" content="" />
@@ -38,53 +38,52 @@
         <p class="sdbar__in"><svg class="sdbar__hx" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.7 4.4 13a4.8 4.8 0 0 1 6.8-6.8l.8.8.8-.8A4.8 4.8 0 1 1 19.6 13Z"/></svg><span class="sdbar__made">Made with</span><a href="https://selldone.com" rel="noopener">Selldone</a></p>
       </div>
 
-      <header class="hdr fashioni-header" data-shared-chrome="v2">
-        <div class="topbar"><span class="topbar__long" data-announce-long>Fresh fashion · Easy discovery · Secure checkout</span><span class="topbar__short" data-announce-short>Fresh fashion · Secure checkout</span></div>
-        <div class="wrap hdr__in fashioni-primary">
-          <button class="header-search" type="button" data-open="search" aria-label="Search products"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg><span>Search for products, brands and categories</span></button>
-          <a class="logo fashioni-logo" href="index.html" aria-label="Marko home">MAR<span>KO</span></a>
-          <div class="hdr__tools"><div class="hdr__act">
-            <button class="iconbtn" type="button" data-open="account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></button>
-            <button class="iconbtn" type="button" data-open="cart" aria-label="Open bag, 0 items"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cartdot" data-cart-count hidden>0</span></button>
-            <a class="header-checkout" href="checkout.html">Checkout</a>
-          </div></div>
-        </div>
-        <div class="fashioni-navrow"><nav class="nav audience-nav" aria-label="Main"><a href="shop.html">All Products</a><a href="shop.html?audience=girls">Girls</a><a href="shop.html?audience=boys">Boys</a><a href="shop.html?audience=baby">Baby</a><a href="shop.html?audience=women">Women</a><a href="shop.html?audience=men">Men</a><a href="brands.html" data-nav-brands>Brands</a></nav><div class="mega"><div class="mega__grid" id="megagrid"></div></div></div>
-      </header>
+      <header class="hdr fashioni-header market-header" data-shared-chrome="v3">
+  <div class="topbar"><span class="topbar__long" data-announce-long>Free pickup · Easy returns · Secure checkout</span><span class="topbar__short" data-announce-short>Easy returns · Secure checkout</span></div>
+  <div class="market-primary">
+    <button class="market-menu-toggle" type="button" data-open="nav" aria-label="Open menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <a class="logo market-logo" href="index.html" aria-label="Marko home">marko<span aria-hidden="true">✦</span></a>
+    <a class="market-location" href="shop.html"><small>How do you want your items?</small><b>Delivery or pickup</b></a>
+    <button class="header-search" type="button" data-open="search" aria-label="Search everything at Marko"><span>Search everything at Marko</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg></button>
+    <div class="hdr__tools"><div class="hdr__act">
+      <button class="iconbtn market-account" type="button" data-open="account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span><small>Sign in</small><b>Account</b></span></button>
+      <button class="iconbtn" type="button" data-open="cart" aria-label="Open bag, 0 items"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cartdot" data-cart-count hidden>0</span></button>
+    </div></div>
+  </div>
+  <div class="fashioni-navrow market-navrow"><nav class="nav audience-nav" aria-label="Main">
+    <a class="market-departments" href="shop.html" data-nav-panel="departments" aria-haspopup="true" aria-expanded="false">☰ Departments</a><a href="shop.html?cats=activewear%2Cfootwear%2Cdresses-and-one-pieces%2Ctops-and-t-shirts%2Csunglasses%2Cbags-and-accessories%2Cshorts%2Cjackets-and-layers&amp;label=Fashion" data-nav-panel="fashion" aria-haspopup="true" aria-expanded="false">Fashion</a><a href="shop.html?cats=laptop%2Cmonitors%2Ctvs%2Cheadphones%2Cearbuds&amp;label=Electronics" data-nav-panel="electronics" aria-haspopup="true" aria-expanded="false">Electronics</a><a href="shop.html?audience=women" data-nav-panel="women" aria-haspopup="true" aria-expanded="false">Women</a><a href="shop.html?audience=men" data-nav-panel="men" aria-haspopup="true" aria-expanded="false">Men</a><a href="shop.html?audience=kids" data-nav-panel="kids" aria-haspopup="true" aria-expanded="false">Kids</a><a href="brands.html" data-nav-panel="brands" aria-haspopup="true" aria-expanded="false">Brands</a>
+  </nav><div class="mega-overlay" data-mega-overlay></div><div class="mega" aria-hidden="true"><div class="mega__grid" id="megagrid"></div></div></div>
+</header>
 
-      <main id="main" tabindex="-1" class="section" style="padding-top:44px">
+      <main id="main" tabindex="-1" class="section co-page">
         <div class="wrap">
-
-          <div class="steps" id="steps" aria-label="Checkout progress"></div>
+          <div class="costeps" id="costeps" aria-label="Checkout progress"></div>
 
           <div class="co">
+            <!-- Mobile only: the item list would otherwise push the first field
+                 more than a screen down, so it collapses to a single row. -->
+            <div class="cosum" id="cosum" hidden></div>
 
-            <div>
-              <form id="coform" novalidate onsubmit="return false"><p class="cap" role="status">Loading secure checkout…</p></form>
+            <div class="co__main">
+              <form id="coform" novalidate onsubmit="return false">
+                <p class="cap" role="status">Loading secure checkout&hellip;</p>
+              </form>
 
               <div id="done" class="done" hidden tabindex="-1">
                 <p class="eyebrow eyebrow--blued">Order recorded</p>
                 <h1 class="h1" style="margin-bottom:14px">Thank you.</h1>
                 <p class="lede" style="margin:0 auto">A confirmation would normally follow by email, with tracking details once the order ships.</p>
-                <p class="done__ref" id="doneref">—</p>
-                <p class="cap" style="margin-bottom:24px">Your order is confirmed only after the secure Selldone checkout completes.</p>
+                <p class="done__ref" id="doneref">&mdash;</p>
+                <p class="cap" style="margin-bottom:24px">Your order is confirmed only after secure checkout completes.</p>
                 <a class="btn btn--line" href="index.html">Back to Marko</a>
               </div>
             </div>
 
-            <aside class="sum">
-              <p class="eyebrow">Order summary</p>
-              <div id="sumrows"></div>
-
-              <div id="sumtotals">
-                <div class="sum__line"><span>Bag subtotal</span><span class="price" id="subtotal">—</span></div>
-              </div>
-
-              <p class="cap mb0">Product availability and final order totals are checked in the secure Selldone checkout.</p>
-            </aside>
-
+            <aside class="corail" id="corail"></aside>
           </div>
         </div>
+
+        <div class="mobar" id="mobar" hidden></div>
       </main>
 
       <footer class="ft ink" style="padding-top:56px">

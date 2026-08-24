@@ -20,10 +20,10 @@ import { chromium } from "playwright";
 const B = (process.argv[2] || "http://localhost:8788").replace(/\/+$/, "");
 const PAGES = [["home","/","#catgrid .home-dept-card"],["shop","/shop.html","#pgrid .pcard"],
                 ["product","/product.html?id=711002","#pdp h1"],
-                // #sumrows is static markup present before hydration. checkout.js
-                // binds #next and .promo after awaiting the catalog, so waiting on
-                // the container reports both as unwired. Wait for a rendered row.
-                ["checkout","/checkout.html","#sumrows .sum__row"],
+                // The checkout renders its panels only after the catalog resolves,
+                // so waiting on a static container would report every control on
+                // the page as unwired. Wait for a rendered panel.
+                ["checkout","/checkout.html","#continueCheckout"],
                 ["about","/about-us",".prose"],["terms","/terms",".prose"],
                 ["privacy","/privacy",".prose"],["contact","/contact-us",".prose"],
                 ["blog","/blog",".post"],
