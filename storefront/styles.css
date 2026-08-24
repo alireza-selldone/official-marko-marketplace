@@ -143,7 +143,15 @@ html[data-theme="amber"]{
 /* ---------- 02 Reset and base ---------- */
 *,*::before,*::after{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+/* `overflow-x:hidden` makes the element a scroll container, and a scroll
+   container silently kills `position:sticky` for everything inside it — which
+   is why the product page's buy column scrolled away with the page. `clip`
+   crops the same overflow without creating one. `hidden` stays as the fallback
+   for engines without `clip`; there sticky degrades, the layout does not. */
 html,body{width:100%;max-width:100%;overflow-x:hidden;}
+@supports (overflow-x:clip){
+  html,body{overflow-x:clip;}
+}
 body{
   margin:0;background:var(--surface);color:var(--ink);
   font-family:var(--body);font-size:var(--t-base);line-height:1.5;
@@ -1854,10 +1862,25 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
    shopper. The price used to sit at the far left of a full-width sticky bar,
    a screen away from the control it belongs to.
    ========================================================================== */
+/* Two tracks: everything a shopper reads, and the rail they buy from. The
+   reading track carries the gallery, the product information, the companion
+   items and the specification panel, which is what gives the rail beside it a
+   tall containing block — a sticky element cannot travel further than that, and
+   when the grid row held only the gallery the rail had about 30px of movement
+   and read as broken. */
 .pdp{
-  display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.92fr) 336px;
+  display:grid;grid-template-columns:minmax(0,1fr) 348px;
   gap:var(--s7);align-items:start;
 }
+.pdp__col{
+  display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);
+  column-gap:var(--s7);row-gap:var(--s8);align-items:start;
+}
+.pdp__media{grid-column:1;position:sticky;top:132px;}
+.pinfo{grid-column:2;}
+/* Companion items and specifications run under both reading columns. */
+.pdp__wide{grid-column:1 / -1;min-width:0;}
+.pdp__wide[hidden]{display:none;}
 .pinfo__label{margin-top:var(--s6);}
 .pinfo h1{margin:6px 0 8px;font-size:clamp(24px,2.3vw,33px);}
 
@@ -1923,8 +1946,9 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
 
 /* ---- page sections below the fold ---- */
 .pdp-sec{padding:var(--sec-y) 0;border-top:1px solid var(--line);}
+.pdp__wide + .pdp__wide{padding-top:var(--s7);border-top:1px solid var(--line);}
 .pdp-sec[hidden]{display:none;}
-.reviews-section{background:var(--surface-inverse);color:#fff;border-top:0;}
+.reviews-section{background:var(--surface);}
 
 /* ---- frequently bought together ---- */
 .fbt{
@@ -1964,6 +1988,11 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
 .spectbl{width:100%;border-collapse:collapse;font-size:var(--t-md);}
 .spectbl th,.spectbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
 .spectbl th{width:46%;color:var(--ink-3);font-weight:600;}
+.spectbl__group th{
+  width:auto;padding-top:var(--s5);color:var(--ink);
+  font-size:var(--t-md);font-weight:700;
+}
+.spectbl tr:first-child.spectbl__group th{padding-top:0;}
 
 .related-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s5);margin-bottom:var(--s5);}
 .related-controls button{
@@ -1973,23 +2002,33 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
 .related-controls button:hover:not(:disabled){border-color:var(--theme-primary);color:var(--theme-primary);}
 .related-controls button:disabled{opacity:.35;cursor:default;}
 .related-controls svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.reviews-section .related-heading h2{color:#fff;}
+
 
 /* ---- responsive ---- */
 @media (min-width:1600px){
-  .pdp{grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr) 380px;}
+  .pdp{grid-template-columns:minmax(0,1fr) 380px;}
   .buybox__price{font-size:36px;}
 }
-@media (max-width:1280px){
-  .pdp{grid-template-columns:minmax(0,1fr) 320px;}
-  /* Gallery keeps the left column; information moves under it so the buy
-     column never gets squeezed to an unusable width. */
+@media (max-width:1180px){
+  /* Below this the two reading columns would both be too narrow to be worth
+     keeping, so the information stacks under the gallery. The buy rail keeps
+     its own track and stays sticky. */
+  .pdp{grid-template-columns:minmax(0,1fr) 312px;}
+  .pdp__col{grid-template-columns:minmax(0,1fr);row-gap:var(--s6);}
+  .pdp__media{position:static;}
   .pinfo{grid-column:1;}
-  .buybox{grid-column:2;grid-row:1 / span 2;}
+  .gal{max-width:520px;}
 }
 @media (max-width:1023px){
   .pdp{grid-template-columns:minmax(0,1fr);}
-  .buybox{position:static;grid-column:1;grid-row:auto;}
+  /* The rail has to reach the shopper before the specification panel does, so
+     the column dissolves and its children reorder around the buy box. */
+  .pdp__col{display:contents;}
+  .pdp__media{order:1;}
+  .pinfo{order:2;}
+  .buybox{order:3;position:static;}
+  .pdp__wide{order:4;}
+  .gal{max-width:none;}
   .fbt{grid-template-columns:minmax(0,1fr);}
   .about{grid-template-columns:minmax(0,1fr);gap:var(--s6);}
 }
@@ -2002,40 +2041,40 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
 
 /* ---- ratings and reviews ---- */
 .revblock{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s8);align-items:start;}
-.revblock__score strong{display:block;font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:#fff;}
-.revblock__score .review-stars{display:block;margin:8px 0 5px;font-size:17px;color:var(--star);}
-.revblock__score small{color:var(--whisper);font-size:var(--t-md);}
+.revblock__score strong{display:block;font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);}
+.revblock__score .review-stars{display:block;margin:8px 0 5px;font-size:17px;color:var(--star-ink);}
+.revblock__score small{color:var(--ink-3);font-size:var(--t-md);}
 .revbars{display:grid;gap:7px;margin-top:var(--s5);}
-.revbar{display:grid;grid-template-columns:54px minmax(0,1fr) 40px;gap:10px;align-items:center;font-size:var(--t-sm);color:var(--whisper);}
-.revbar i{display:block;height:8px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.16);}
+.revbar{display:grid;grid-template-columns:54px minmax(0,1fr) 40px;gap:10px;align-items:center;font-size:var(--t-sm);color:var(--ink-2);}
+.revbar i{display:block;height:8px;overflow:hidden;border-radius:99px;background:var(--surface-3);}
 .revbar i b{display:block;height:100%;background:var(--star);}
 .revchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:var(--s5);}
 .revchips span{
   display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 11px;
-  border:1px solid rgba(255,255,255,.2);border-radius:var(--r-pill);
-  font-size:var(--t-sm);font-weight:600;color:#fff;
+  border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);
+  font-size:var(--t-sm);font-weight:600;color:var(--ink);
 }
-.revchips b{color:var(--whisper);font-weight:600;}
+.revchips b{color:var(--ink-3);font-weight:600;}
 .revphotos{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:10px 0 var(--s6);}
-.revphotos span{display:block;aspect-ratio:1;overflow:hidden;border-radius:var(--r-sm);background:#fff;}
+.revphotos span{display:block;aspect-ratio:1;overflow:hidden;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);}
 .revphotos img{width:100%;height:100%;object-fit:contain;padding:6%;}
 /* Same element and same specificity as the rule above, so it has to be scoped
    or the white photo background wins and the count disappears into it. */
 .revphotos span.revphotos__more{
-  display:grid;place-items:center;background:rgba(255,255,255,.12);
-  color:#fff;font-weight:700;font-size:var(--t-md);
+  display:grid;place-items:center;background:var(--surface-3);
+  color:var(--ink-2);font-weight:700;font-size:var(--t-md);
 }
-.revcard{padding:var(--s5) 0;border-top:1px solid rgba(255,255,255,.14);}
-.revcard__top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:var(--t-sm);color:var(--ink-4);}
-.revcard__top .review-stars{color:var(--star);}
-.revcard__verified{color:#7BD8A6;font-weight:700;}
-.revcard h3{margin:8px 0 5px;font-size:var(--t-lg);color:#fff;}
-.revcard p{color:var(--whisper);font-size:var(--t-md);line-height:1.65;}
+.revcard{padding:var(--s5) 0;border-top:1px solid var(--line);}
+.revcard__top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:var(--t-sm);color:var(--ink-3);}
+.revcard__top .review-stars{color:var(--star-ink);}
+.revcard__verified{color:var(--savings);font-weight:700;}
+.revcard h3{margin:8px 0 5px;font-size:var(--t-lg);color:var(--ink);}
+.revcard p{color:var(--ink-2);font-size:var(--t-md);line-height:1.65;}
 .revcard__imgs{display:flex;gap:8px;margin-top:10px;}
-.revcard__imgs img{width:80px;height:80px;object-fit:contain;padding:6px;border-radius:var(--r-sm);background:#fff;}
-.revcard__foot{display:flex;flex-wrap:wrap;gap:8px var(--s5);margin-top:10px;font-size:var(--t-sm);color:var(--ink-4);}
-.revcard__foot b{color:#fff;}
-.revblock__note{margin-top:var(--s5);color:var(--ink-4);font-size:var(--t-sm);}
+.revcard__imgs img{width:80px;height:80px;object-fit:contain;padding:6px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);}
+.revcard__foot{display:flex;flex-wrap:wrap;gap:8px var(--s5);margin-top:10px;font-size:var(--t-sm);color:var(--ink-3);}
+.revcard__foot b{color:var(--ink);}
+.revblock__note{margin-top:var(--s5);color:var(--ink-3);font-size:var(--t-sm);}
 @media (max-width:1023px){
   .revblock{grid-template-columns:minmax(0,1fr);gap:var(--s6);}
   .revphotos{grid-template-columns:repeat(4,minmax(0,1fr));}

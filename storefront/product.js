@@ -118,23 +118,62 @@ export function crossSellProducts(product, catalog, promotionSafe) {
   return chosen;
 }
 
+function specText(value) {
+  if (Array.isArray(value)) return value.map(specText).filter(Boolean).join(", ");
+  if (value && typeof value === "object") {
+    /* Some records store a spec as a small wrapper rather than a bare string.
+       Take the readable member; `String(value)` here is what printed
+       `[object Object]` on the page. */
+    const inner = value.value ?? value.text ?? value.title ?? value.name ?? value.en;
+    return inner === undefined ? "" : specText(inner);
+  }
+  return value === null || value === undefined ? "" : String(value);
+}
+
+/* Selldone stores specifications two levels deep — a group name mapping to its
+   members ("Fabric & Care" → { Main Fabric, Lining, … }) — with older records
+   marking a group by the literal string "group" and keeping members flat. Both
+   shapes flatten to the same row list; a group contributes a header row rather
+   than a value, which is what the table now renders. */
 function specRows(spec) {
-  if (!spec) return [];
+  if (!spec || typeof spec !== "object") return [];
   const rows = [];
   const seen = new Set();
-  SPEC_ORDER.forEach((k) => {
-    const v = spec[k];
-    if (!v || v === "group" || seen.has(k)) return;
-    seen.add(k);
-    rows.push([k, Array.isArray(v) ? v.join(", ") : String(v)]);
+
+  const isGroup = (value) =>
+    value && typeof value === "object" && !Array.isArray(value)
+    && value.value === undefined && value.text === undefined
+    && Object.keys(value).length > 0;
+
+  const add = (key, value) => {
+    if (!key || seen.has(key)) return;
+    const text = specText(value);
+    if (!text) return;
+    seen.add(key);
+    rows.push([key, text, false]);
+  };
+
+  /* Preferred keys first, but only where the record keeps them flat. */
+  SPEC_ORDER.forEach((key) => {
+    const value = spec[key];
+    if (value && value !== "group" && !isGroup(value)) add(key, value);
   });
-  Object.entries(spec).forEach(([k, v]) => {
-    if (v === "group" || seen.has(k) || !v) return;
-    seen.add(k);
-    rows.push([k, Array.isArray(v) ? v.join(", ") : String(v)]);
+
+  Object.entries(spec).forEach(([key, value]) => {
+    if (value === "group" || seen.has(key)) return;
+    if (isGroup(value)) {
+      const members = Object.entries(value).filter(([k, v]) => k && specText(v));
+      if (!members.length) return;
+      rows.push([key, "", true]);
+      members.forEach(([k, v]) => add(k, v));
+      return;
+    }
+    add(key, value);
   });
+
   return rows;
 }
+
 
 /* ---------- Ratings and reviews ----------
    Selldone returns no ratings for this catalog (`rate_count` is 0 everywhere),
@@ -167,13 +206,16 @@ function ratingBlock(p, gallery = []) {
   const live = Number(p.rateCount) > 0;
   const average = live ? Number(p.rate).toFixed(1) : "4.6";
   const count = live ? Number(p.rateCount) : SAMPLE_REVIEWS.length;
-  /* A single-image product produced a strip of one photo next to an empty
-     counter, which reads as a broken grid rather than a gallery. */
-  const photos = gallery.length >= 3 ? gallery.slice(0, 6) : [];
+  /* Selldone returns no review photography, so the product's own gallery
+     stands in — a handful of real shots rather than a wall of invented ones.
+     The strip needs at least two images; one photo beside a counter reads as a
+     broken grid. Cards cycle the same set so every review carries one. */
+  const photos = gallery.length >= 2 ? gallery.slice(0, 6) : [];
+  const cardPhoto = (index) => (gallery.length ? gallery[index % gallery.length] : null);
 
   return `
   <div class="related-heading">
-    <div><p class="eyebrow eyebrow--onink mb0">What shoppers say</p><h2 class="h2">Customer ratings &amp; reviews</h2></div>
+    <div><p class="eyebrow eyebrow--blued mb0">What shoppers say</p><h2 class="h2">Customer ratings &amp; reviews</h2></div>
   </div>
   <div class="revblock">
     <div class="revblock__score">
@@ -193,7 +235,7 @@ function ratingBlock(p, gallery = []) {
 
     <div class="revblock__body">
       ${photos.length ? `
-      <p class="eyebrow eyebrow--onink mb0">Customer photos</p>
+      <p class="eyebrow eyebrow--blued mb0">Customer photos</p>
       <div class="revphotos">
         ${photos.map((shot) => `<span><img src="${esc(shot.src)}" alt="" loading="lazy" width="140" height="140"></span>`).join("")}
         <span class="revphotos__more">+${Math.max(1, count - photos.length)}</span>
@@ -208,7 +250,7 @@ function ratingBlock(p, gallery = []) {
           </div>
           <h3>${esc(headline)}</h3>
           <p>${esc(body)}</p>
-          ${photos[index] ? `<div class="revcard__imgs"><img src="${esc(photos[index].src)}" alt="" loading="lazy" width="80" height="80"></div>` : ""}
+          ${cardPhoto(index) ? `<div class="revcard__imgs"><img src="${esc(cardPhoto(index).src)}" alt="" loading="lazy" width="80" height="80"></div>` : ""}
           <div class="revcard__foot"><span><b>${esc(name)}</b> · REF. ${p.id}</span><span>Helpful</span></div>
         </article>`).join("")}
 
@@ -287,7 +329,9 @@ async function initPDP(cat) {
   root.innerHTML = `
   <nav class="crumb" aria-label="Breadcrumb"><a href="index.html">Home</a><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a><span aria-current="page">${esc(p.name)}</span></nav>
   <div class="pdp">
-    <div class="gal">
+   <div class="pdp__col">
+    <div class="pdp__media">
+     <div class="gal">
       <div class="thumbs" role="group" aria-label="Gallery views"${gallery.length < 2 ? ' hidden' : ''}>
         ${gallery.map((g, i) => `
           <button class="thumb${i ? "" : " is-on"}" type="button" data-i="${i}" aria-label="View ${i + 1} of ${gallery.length}">
@@ -298,6 +342,7 @@ async function initPDP(cat) {
         ${saleBadgeHTML(p, "product")}
         <img src="${gallery[0].src}" alt="${esc(gallery[0].alt)}" width="${gallery[0].w}" height="${gallery[0].h}" fetchpriority="high">
       </button>
+     </div>
     </div>
 
     <div class="pinfo">
@@ -330,6 +375,15 @@ async function initPDP(cat) {
 
       ${prosHTML(p)}
     </div>
+
+    <!-- Similar items and the specification panel belong to the scrolling
+         column, not to full-width strips below it. That is what gives the buy
+         rail beside them something to stay alongside: a sticky element can only
+         travel inside its own containing block, and a grid row holding just the
+         gallery left it with about 30px of movement. -->
+    <section class="pdp__wide" id="crosssell" hidden></section>
+    <section class="pdp__wide" id="about"></section>
+   </div>
 
     <!-- The buy column stays with the shopper while they read. The price used to
          sit at the far left of a full-width sticky bar, a screen away from the
@@ -377,14 +431,13 @@ async function initPDP(cat) {
      is the one thing the reference implementations get wrong: theirs add only
      the product being viewed. No bundle discount is claimed — this storefront
      cannot apply one at checkout, and a saving that does not happen is a lie. */
-  const crossSection = document.getElementById("crosssell-section");
   const crossRoot = document.getElementById("crosssell");
   const companions = crossSellProducts(p, cat, promotionSafeProducts(cat.products));
   if (crossRoot && companions.length) {
     const set = [p, ...companions];
     const total = set.reduce((sum, row) => sum + Number(row.price || 0), 0);
     const wasTotal = set.reduce((sum, row) => sum + Number(row.was || row.price || 0), 0);
-    crossSection.hidden = false;
+    crossRoot.hidden = false;
     crossRoot.innerHTML = `
       <div class="related-heading"><div><p class="eyebrow eyebrow--blued mb0">Buy it with</p><h2 class="h2">Frequently bought together</h2></div></div>
       <div class="fbt">
@@ -426,7 +479,9 @@ async function initPDP(cat) {
         <div class="about__col">
           <h3>Specifications</h3>
           ${rows.length ? `<table class="spectbl"><tbody>
-            ${rows.map(([key, value]) => `<tr><th scope="row">${esc(key)}</th><td>${esc(value)}</td></tr>`).join("")}
+            ${rows.map(([key, value, isGroup]) => isGroup
+              ? `<tr class="spectbl__group"><th colspan="2" scope="colgroup">${esc(key)}</th></tr>`
+              : `<tr><th scope="row">${esc(key)}</th><td>${esc(value)}</td></tr>`).join("")}
             ${p.raw?.sku ? `<tr><th scope="row">SKU</th><td>${esc(p.raw.sku)}</td></tr>` : ""}
             <tr><th scope="row">Product ID</th><td>${p.id}</td></tr>
           </tbody></table>` : `<p class="cap">No specifications are recorded for REF. ${p.id}.</p>`}
@@ -482,7 +537,15 @@ async function initPDP(cat) {
   const rt = document.getElementById("reltitle");
   if (rt) rt.textContent = others.length ? `More in ${c.name}` : "Explore the catalog";
   const rel = document.getElementById("related");
-  const relatedProducts = (others.length ? others : cat.products.filter((x) => x.id !== p.id)).slice(0, 12);
+  /* A "More in ..." rail is a merchandising placement, so it answers to the
+     same promotional-image rule as the seller rail below it and the companion
+     set above it — both of which already filter. Leaving this one unfiltered
+     put rear-angle swimwear in the strip. The unfiltered list stays as the last
+     resort so a department made entirely of excluded products still shows
+     something rather than an empty rail. */
+  const relatedPool = others.length ? others : cat.products.filter((x) => x.id !== p.id);
+  const relatedSafe = promotionSafeProducts(relatedPool);
+  const relatedProducts = (relatedSafe.length >= 4 ? relatedSafe : relatedPool).slice(0, 12);
   if (rel) rel.innerHTML = relatedProducts.map((product) => cardHTML(product)).join("");
 
   const relatedViewport = document.querySelector("[data-related-viewport]");
