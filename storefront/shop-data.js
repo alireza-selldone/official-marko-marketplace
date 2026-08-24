@@ -313,6 +313,10 @@ export const heroOf = (cfg) => {
 export function img(path, size) {
   return selldoneImagePathToUrl(path, { shopId: SHOP.id, scope: "products", size });
 }
+/* Vendor logos live under a different CDN scope to product media. */
+export function vendorImg(path, size) {
+  return selldoneImagePathToUrl(path, { shopId: SHOP.id, scope: "vendors", size });
+}
 
 /* ---------- Money ---------- */
 export const money = (n) =>

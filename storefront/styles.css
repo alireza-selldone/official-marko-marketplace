@@ -1885,6 +1885,43 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
   .legal-contact > div{grid-template-columns:minmax(0,1fr);gap:2px;}
 }
 
+/* ---- filters before the catalog arrives ----
+   The shell used to ship fully laid out but empty: Category, Size and Brand as
+   labelled columns with nothing under them, next to a price slider whose range
+   was meaningless because the real minimum and maximum come from the catalog.
+   For the second or so before hydration that reads as a broken filter bar
+   rather than a loading one. Skeletons hold the same space, and the controls
+   that cannot answer yet stay out of reach until they can. */
+.fgroup__sk{display:none;}
+.filters.is-pending .fgroup__sk{display:block;padding-top:2px;}
+.filters.is-pending .fgroup__sk .skeleton-line:last-child{margin-bottom:0;}
+.filters.is-pending .fgroup__sk--price{margin-bottom:var(--s4);}
+/* Removed from flow rather than dimmed: a disabled slider still reads as a real
+   control resting at a real value, and until the catalog lands that value is
+   wrong. The skeletons hold the space instead, so nothing shifts on hydrate. */
+.filters.is-pending #price-range,
+.filters.is-pending .price-fields,
+.filters.is-pending .price-range-values,
+.filters.is-pending .check,
+.filters.is-pending #clear{display:none;}
+.filters.is-pending .fgroup h4{color:var(--ink-3);}
+@media (prefers-reduced-motion:reduce){
+  .filters.is-pending .skeleton-block{animation:none;}
+}
+
+/* ---- seller marks ----
+   A logo when the backoffice has one, the initial only while it does not. */
+.vendor-directory__mark--logo,.vendor-hero__mark--logo{
+  display:grid;place-items:center;overflow:hidden;background:#fff;padding:6px;
+}
+.vendor-directory__mark--logo img,.vendor-hero__mark--logo img{
+  width:100%;height:100%;object-fit:contain;
+}
+.market-vendor__empty{
+  margin:0;align-self:center;justify-self:center;
+  color:var(--ink-3);font-size:var(--t-md);
+}
+
 /* ==========================================================================
    17b CHECKOUT
    Two tracks: the decisions a shopper makes, and the bag they are paying for.

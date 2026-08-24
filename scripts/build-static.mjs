@@ -21,6 +21,10 @@ await copyDirectory("storefront", ".");
 await copyDirectory("dashboard", "dashboard");
 await copyDirectory("shared", "shared");
 await copyDirectory("callback", "callback");
+/* The OAuth client registers https://<domain>/selldone-callback, so the same
+   callback app has to answer there. Serving it from one place and registering
+   another is the kind of mismatch that only shows up as a failed login. */
+await copyDirectory("callback", "selldone-callback");
 
 /* shop.config.json ships beside the pages, not inside the bundle. The same
    built output therefore serves any shop: replacing this one file replaces

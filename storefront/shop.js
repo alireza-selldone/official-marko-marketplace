@@ -303,6 +303,7 @@ function initShop(cat) {
     render();
   });
 
+  document.getElementById("filters")?.classList.remove("is-pending");
   render();
 }
 

@@ -1,9 +1,8 @@
-import { loadCatalog, loadVendors, promotionSafeProducts } from "./shop-data.js";
+import { loadCatalog, loadVendors, promotionSafeProducts, vendorImg } from "./shop-data.js";
 import { cardHTML, esc, initRailNav } from "./app.js";
-import { MARKETPLACE_VENDORS } from "./marketplace-config.js";
+import { vendorRoster } from "./marketplace-config.js";
 
 const requested = new URLSearchParams(location.search).get("vendor")?.toLowerCase() || "";
-const fallback = MARKETPLACE_VENDORS[requested];
 
 /* MK-015 — an unknown seller is not a seller.
    The page used to fall back to Alio for any unrecognised slug while leaving
@@ -60,13 +59,12 @@ function renderDepartments(grid, categories) {
   });
 }
 
-if (!fallback) {
-  renderUnknownVendor(requested);
-} else {
-  Promise.all([loadCatalog(), loadVendors().catch(() => [])]).then(([catalog, liveVendors]) => {
-    const live = liveVendors.find((vendor) => Number(vendor.id) === fallback.id) || {};
-    const vendor = { ...fallback, ...live };
-    const products = catalog.products.filter((product) => product.vendorSlug === fallback.slug);
+Promise.all([loadCatalog(), loadVendors().catch(() => [])]).then(([catalog, liveVendors]) => {
+  const vendor = vendorRoster(liveVendors).find((row) => row.slug === requested);
+  if (!vendor) { renderUnknownVendor(requested); return; }
+  {
+    const fallback = vendor;
+    const products = catalog.products.filter((product) => product.vendorSlug === vendor.slug);
     const promoProducts = promotionSafeProducts(products);
     const categories = catalog.cats.filter((category) => products.some((product) => product.cat === category.slug));
     document.body.dataset.vendorAccent = fallback.accent;
@@ -74,13 +72,30 @@ if (!fallback) {
 
     const set = (selector, value) => { const element = document.querySelector(selector); if (element) element.textContent = value; };
     set("[data-vendor-eyebrow]", fallback.eyebrow);
-    set("[data-vendor-initial]", vendor.name.slice(0, 1));
+    const initial = document.querySelector("[data-vendor-initial]");
+    const logo = vendorImg(vendor.icon, 256);
+    if (initial) {
+      if (logo) {
+        initial.innerHTML = `<img src="${esc(logo)}" alt="" width="72" height="72">`;
+        initial.classList.add("vendor-hero__mark--logo");
+      } else {
+        initial.textContent = vendor.name.slice(0, 1);
+      }
+    }
     set("[data-vendor-name]", vendor.name);
     set("[data-vendor-description]", vendor.description || fallback.description);
     set("[data-vendor-category-title]", `${vendor.name} departments.`);
     set("[data-vendor-product-title]", `Popular at ${vendor.name}.`);
-    set("[data-vendor-story-title]", fallback.slug === "alio" ? "Style for real life." : "Technology that earns its place.");
-    set("[data-vendor-story-copy]", fallback.slug === "alio" ? "Alio brings together wearable color, comfortable fits, active essentials, footwear, and accessories across every age group." : "Merino focuses on useful electronics for home, work, content creation, entertainment, and travel — all with live Marko inventory.");
+    /* Story copy is per-seller and there are only two written; a third seller
+       used to be told it sells technology. Fall back to the seller's own
+       description rather than someone else's positioning. */
+    const STORY = {
+      alio: ["Style for real life.", "Alio brings together wearable color, comfortable fits, active essentials, footwear, and accessories across every age group."],
+      merino: ["Technology that earns its place.", "Merino focuses on useful electronics for home, work, content creation, entertainment, and travel — all with live Marko inventory."],
+    };
+    const story = STORY[vendor.slug] || [`About ${vendor.name}.`, vendor.description];
+    set("[data-vendor-story-title]", story[0]);
+    set("[data-vendor-story-copy]", story[1]);
 
     /* MK-018 — "View all" reaches the full seller catalogue.
        It used to point at `#vendor-products`, the same twelve-card rail the
@@ -116,9 +131,9 @@ if (!fallback) {
       more.innerHTML = promoProducts.slice(12, 24).map((product) => cardHTML(product)).join("");
       initRailNav(more, document.querySelector('[data-rail-nav="vendor-more"]'), `More products from ${vendor.name}`);
     }
-  }).catch((error) => {
-    console.error(error);
-    const description = document.querySelector("[data-vendor-description]");
-    if (description) description.textContent = "This seller could not be loaded. Please try again shortly.";
-  });
-}
+  }
+}).catch((error) => {
+  console.error(error);
+  const description = document.querySelector("[data-vendor-description]");
+  if (description) description.textContent = "This seller could not be loaded. Please try again shortly.";
+});

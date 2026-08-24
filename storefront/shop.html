@@ -10,13 +10,13 @@
     />
     <meta name="shop-name" content="Marko" />
     <meta name="pajulina-app-name" content="Marko Storefront" />
-    <meta name="pajulina-client-id" content="" />
+    <meta name="pajulina-client-id" content="01a02835-dc8f-71f5-95f8-bb299856e504" />
     <meta name="pajulina-shop-id" content="15596" />
     <meta name="pajulina-shop-name" content="Marko" />
     <meta name="pajulina-shop-domain" content="marko-5vMFPy7t.myselldone.com" />
     <meta name="pajulina-storefront-shop-handle" content="marko-5vMFPy7t" />
     <meta name="pajulina-dashboard-path" content="/dashboard/" />
-    <meta name="pajulina-callback-path" content="/callback/" />
+    <meta name="pajulina-callback-path" content="/selldone-callback" />
     <meta name="pajulina-selldone-base" content="https://selldone.com" />
     <meta name="pajulina-api-base" content="https://api.selldone.com" />
     <meta name="pajulina-xapi-base" content="https://xapi.selldone.com" />
@@ -67,7 +67,7 @@
 
           <div class="shop">
 
-            <form class="filters" id="filters" aria-label="Refine the catalog" onsubmit="return false">
+            <form class="filters is-pending" id="filters" aria-label="Refine the catalog" onsubmit="return false">
               <div class="filters__head">
                 <span class="eyebrow mb0">Refine</span>
                 <button type="button" class="xbtn mobonly" data-close>Done</button>
@@ -75,12 +75,12 @@
 
               <div class="fgroup">
                 <h4 id="fg-collection">Category</h4>
-                <div id="catfilters" role="group" aria-labelledby="fg-collection"></div>
+                <div id="catfilters" role="group" aria-labelledby="fg-collection"></div><span class="fgroup__sk" aria-hidden="true"><i class="skeleton-block skeleton-line sk-line-85"></i><i class="skeleton-block skeleton-line sk-line-70"></i><i class="skeleton-block skeleton-line sk-line-55"></i></span>
               </div>
 
               <div class="fgroup">
                 <h4 id="fg-size">Size</h4>
-                <div id="sizefilters" role="group" aria-labelledby="fg-size"></div>
+                <div id="sizefilters" role="group" aria-labelledby="fg-size"></div><span class="fgroup__sk" aria-hidden="true"><i class="skeleton-block skeleton-line sk-line-55"></i><i class="skeleton-block skeleton-line sk-line-70"></i><i class="skeleton-block skeleton-line sk-line-55"></i></span>
               </div>
 
               <div class="fgroup">
@@ -90,6 +90,7 @@
                 <!-- Both logarithmic controls share one visual track. The scale
                      keeps everyday prices usable even when one premium product
                      makes the catalogue ceiling unusually high. -->
+                <span class="fgroup__sk fgroup__sk--price" aria-hidden="true"><i class="skeleton-block skeleton-line sk-line-85"></i></span>
                 <div class="dual-range" id="price-range" style="--range-start:0%;--range-end:100%">
                   <span class="dual-range__track" aria-hidden="true"><i></i></span>
                   <label class="sr" for="plo">Minimum price slider</label>
@@ -106,11 +107,12 @@
               <div class="fgroup">
                 <h4>Availability</h4>
                 <label class="check"><input type="checkbox" id="instock"> In stock only</label>
+                <span class="fgroup__sk" aria-hidden="true"><i class="skeleton-block skeleton-line sk-line-70"></i></span>
               </div>
 
               <div class="fgroup">
                 <h4 id="fg-brand">Brand</h4>
-                <div id="brandfilters" role="group" aria-labelledby="fg-brand"></div>
+                <div id="brandfilters" role="group" aria-labelledby="fg-brand"></div><span class="fgroup__sk" aria-hidden="true"><i class="skeleton-block skeleton-line sk-line-70"></i><i class="skeleton-block skeleton-line sk-line-85"></i><i class="skeleton-block skeleton-line sk-line-55"></i></span>
               </div>
 
               <div class="fgroup" style="border-bottom:0">

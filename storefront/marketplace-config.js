@@ -39,6 +39,56 @@ export const AUDIENCE_PRODUCT_IDS = {
   108860: [711076,710940,711074,711072,711073,711075],
 };
 
+/* ---------- Live vendor roster ----------
+   The marketplace's sellers live in the backoffice, not here. What this file
+   still has to supply is the department mapping, because Selldone's products
+   carry no vendor_id: every product in the catalog reports `vendor_id: null`,
+   so the only way to say which seller owns a department is to record it.
+
+   Everything else — who exists, their name, their description, their logo —
+   comes from the vendors endpoint at render time. A seller added in the
+   backoffice therefore appears in the directory and gets a page without a code
+   change; one that is renamed or given a logo updates on the next load. A
+   seller with no departments mapped yet still gets a page, and says plainly
+   that it has nothing listed rather than showing someone else's products. */
+
+export const vendorSlug = (name) => String(name || "")
+  .toLowerCase().trim()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "");
+
+const ACCENTS = ["coral", "blue", "emerald", "violet", "amber"];
+
+export function vendorRoster(liveVendors = []) {
+  const configured = Object.values(MARKETPLACE_VENDORS);
+  const byId = new Map(configured.map((vendor) => [Number(vendor.id), vendor]));
+  const roster = [];
+  const claimed = new Set();
+
+  liveVendors.forEach((live, index) => {
+    const config = byId.get(Number(live.id));
+    const slug = config?.slug || vendorSlug(live.name);
+    if (!slug || claimed.has(slug)) return;
+    claimed.add(slug);
+    roster.push({
+      id: Number(live.id),
+      slug,
+      name: live.name || config?.name || slug,
+      description: live.description || config?.description || "",
+      icon: live.icon || "",
+      eyebrow: config?.eyebrow || "Independent seller",
+      accent: config?.accent || ACCENTS[index % ACCENTS.length],
+      categoryIds: config?.categoryIds || [],
+    });
+  });
+
+  /* If the endpoint is unreachable the configured sellers still render, so a
+     network failure degrades to the previous behaviour rather than an empty
+     directory. */
+  if (!roster.length) return configured.map((vendor) => ({ ...vendor, icon: "" }));
+  return roster;
+}
+
 export const vendorForCategory = (categoryId) => {
   const id = Number(categoryId);
   return Object.values(MARKETPLACE_VENDORS).find((vendor) => vendor.categoryIds.includes(id)) || null;

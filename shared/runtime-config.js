@@ -41,7 +41,10 @@ export function getPublicConfig() {
   };
   const appBaseUrl = String(merged.APP_BASE_URL || origin || "").replace(/\/$/, "");
   const selldoneBase = normalizeBaseUrl(merged.SELLDONE_BASE);
-  const callbackPath = normalizePublicPath(merged.CALLBACK_PATH, "/callback/", true);
+  /* No trailing slash is forced here: the redirect_uri has to match the value
+     registered on the OAuth client exactly, and an appended slash makes it a
+     different URI to the authorisation server. */
+  const callbackPath = normalizePublicPath(merged.CALLBACK_PATH, "/callback/");
   const dashboardPath = normalizePublicPath(merged.DASHBOARD_PATH, "/dashboard/", true);
   cachedConfig = {
     ...merged,
