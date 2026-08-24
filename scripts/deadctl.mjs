@@ -54,7 +54,14 @@ const p = await ctx.newPage();
 const seen = new Map();
 for (const [name,url,ready] of PAGES) {
   await p.goto(B+url,{waitUntil:"domcontentloaded"});
-  await p.waitForSelector(ready,{state:"attached",timeout:60000}).catch(()=>{});
+  /* Swallowing this timeout silently made the sweep untrustworthy: a page that
+     never hydrated reports every control on it as unwired, and that is
+     indistinguishable from a real finding. Under suite load the shop page
+     missed its window and produced a phantom "Clear all has no handler". Say so
+     instead, so a phantom run is recognisable as one. */
+  const hydrated = await p.waitForSelector(ready,{state:"attached",timeout:60000})
+    .then(()=>true).catch(()=>false);
+  if (!hydrated) console.log(`  WARN  ${name} never reached "${ready}" - findings below are unreliable`);
   await p.waitForTimeout(1200);
   // open the panels too
   await p.evaluate(()=>{document.querySelector('[data-open="cart"]')?.click();});

@@ -168,8 +168,31 @@ report("checkout summary", await p.evaluate(MEASURE));
 // every product page
 await p.goto(BASE + "/", { waitUntil: "domcontentloaded" });
 await p.waitForSelector("#catgrid .home-dept-card");
-const ids = await p.evaluate(async () => (await import("/shop-data.js")).loadCatalog().then((c) => c.products.map((x) => x.id)));
-console.log(`\n  --- ${ids.length} product pages ---`);
+/* This used to walk every product in the catalog - 322 pages, each one
+   re-fetching products/list and products/all because the catalog cache is a
+   module variable that resets on navigation. Roughly a thousand XAPI calls per
+   run, repeated across every suite run, which is what got this machine's IP
+   blocked by Selldone on 2026-08-23. See docs/selldone-ip-block.md.
+
+   A visual regression sweep does not need the whole catalog; it needs coverage
+   of every layout the PDP can produce, and department is what varies the media
+   shape. Set IMGSWEEP_FULL=1 when a catalog-wide audit is genuinely the goal. */
+const PER_DEPT = Number(process.env.IMGSWEEP_PER_DEPT || 2);
+const FULL = process.env.IMGSWEEP_FULL === "1";
+const ids = await p.evaluate(async (perDept) => {
+  const catalog = await (await import("/shop-data.js")).loadCatalog();
+  if (perDept <= 0) return catalog.products.map((x) => x.id);
+  const taken = new Map();
+  const sampled = [];
+  catalog.products.forEach((product) => {
+    const count = taken.get(product.cat) || 0;
+    if (count >= perDept) return;
+    taken.set(product.cat, count + 1);
+    sampled.push(product.id);
+  });
+  return sampled;
+}, FULL ? 0 : PER_DEPT);
+console.log(`${NL}  --- ${ids.length} product pages${FULL ? " (full catalog)" : ` (${PER_DEPT}/department; IMGSWEEP_FULL=1 for all)`} ---`);
 for (const id of ids) {
   await p.goto(BASE + page_("/product") + "?id=" + id, { waitUntil: "domcontentloaded" });
   await p.waitForSelector("#pdp h1", { timeout: 20000 }).catch(() => {});

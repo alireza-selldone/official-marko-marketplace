@@ -28,13 +28,20 @@ async function fetchJson(url, attempt = 0) {
   return response.json();
 }
 
-async function mapLimit(rows, limit, task) {
+/* `pauseMs` paces each worker between items. Without it this script walked all
+   250 products at full speed, which reads as scraping from the other end and is
+   part of what got this machine's IP blocked by Selldone on 2026-08-23. See
+   docs/selldone-ip-block.md. */
+async function mapLimit(rows, limit, task, pauseMs = 0) {
   const out = new Array(rows.length);
   let cursor = 0;
   await Promise.all(Array.from({ length: Math.min(limit, rows.length) }, async () => {
     while (cursor < rows.length) {
       const index = cursor++;
       out[index] = await task(rows[index], index);
+      if (pauseMs > 0 && cursor < rows.length) {
+        await new Promise((resolve) => setTimeout(resolve, pauseMs));
+      }
     }
   }));
   return out;
@@ -136,7 +143,7 @@ const products = await mapLimit(list.products || [], 2, async (row) => {
     colorWords: wordsOf(detail.title, detail.icon, ...(detail.images || []).map((image) => image.path)),
     assets: inspected,
   };
-});
+}, 500);
 
 const affected = products.flatMap((product) => product.assets
   .filter((asset) => asset.analysis?.whiteBackdrop || asset.analysis?.brightNeutralBackdrop)
