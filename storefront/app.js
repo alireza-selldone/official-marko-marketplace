@@ -268,6 +268,47 @@ async function fillBrandCopy() {
   document.querySelectorAll("[data-brand-cities-line]").forEach((el) => {
     el.textContent = b.cities ? `By appointment, ${b.cities} only` : "By appointment";
   });
+
+  fillContactDetails(cfg);
+}
+
+/* Merchant identity and contact, on the same terms as the brand copy above: a
+   value the config does not carry removes its row rather than printing a
+   placeholder, so a clone that has not filled these in shows a shorter list
+   instead of a list of lies.
+
+   `isDemonstration` exists because this storefront is published on a public
+   domain with a working checkout. A visitor who lands on /terms is entitled to
+   know whether there is a company behind it. Saying so plainly is also why
+   `registration` stays null: an invented company number is the one value here
+   that could actually mislead someone, so the notice states that no registered
+   entity exists rather than inventing one that appears to. */
+function fillContactDetails(cfg) {
+  const c = cfg.contact || {};
+
+  const row = (selector, value, format = (v) => v) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      if (value) el.innerHTML = format(value);
+      else el.closest("[data-contact-row]")?.remove() ?? el.remove();
+    });
+  };
+
+  row("[data-contact-entity]", c.entity);
+  row("[data-contact-email]", c.email, (v) => `<a href="mailto:${v}">${v}</a>`);
+  row("[data-contact-phone]", c.phone, (v) => `<a href="tel:${v.replace(/\s+/g, "")}">${v}</a>`);
+  row("[data-contact-address]", c.address);
+  row("[data-contact-hours]", c.hours);
+  row("[data-contact-response]", c.responseTime);
+  row("[data-contact-registration]", c.registration);
+
+  /* One sentence, shown wherever a page would otherwise imply a trading entity. */
+  document.querySelectorAll("[data-legal-status]").forEach((el) => {
+    if (!c.isDemonstration) { el.remove(); return; }
+    el.textContent = "Marko is a demonstration marketplace built on Selldone. "
+      + "It is not a registered trading company, the contact details below are "
+      + "reserved documentation placeholders, and no order placed here is a real "
+      + "purchase.";
+  });
 }
 
 /* ---------- Theme picker ---------- */

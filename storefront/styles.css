@@ -1856,6 +1856,28 @@ html.js-reveal .reveal.is-in{opacity:1;transform:none;}
   color:var(--ink-3);font-size:var(--t-sm);font-weight:700;
 }
 
+/* ---- merchant identity block on the legal pages ---- */
+.legal-status{
+  margin:0 0 var(--s5);padding:var(--s4) var(--s5);
+  border-left:3px solid var(--theme-primary);border-radius:0 var(--r-sm) var(--r-sm) 0;
+  background:var(--theme-soft);color:var(--ink);font-size:var(--t-md);line-height:1.6;
+}
+.legal-contact{margin:0 0 var(--s6);border-top:1px solid var(--line);}
+.legal-contact > div{
+  display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:var(--s4);
+  align-items:center;padding:5px 0;border-bottom:1px solid var(--line);
+}
+/* The email and telephone entries are standalone actions, not links inside a
+   sentence, so the inline-link exception does not cover them and they owe a
+   full 44px target. The row already stood at about that height, so honouring
+   it costs no visible space. */
+.legal-contact dd a{display:inline-flex;align-items:center;min-height:var(--tap);}
+.legal-contact dt{color:var(--ink-3);font-size:var(--t-md);font-weight:600;}
+.legal-contact dd{margin:0;color:var(--ink);font-size:var(--t-md);}
+@media (max-width:600px){
+  .legal-contact > div{grid-template-columns:minmax(0,1fr);gap:2px;}
+}
+
 /* ==========================================================================
    18 PRODUCT PAGE
    Three columns: gallery, information, and a buy column that stays with the

@@ -46,7 +46,9 @@
         <section class="section">
           <div class="wrap">
             <article class="prose">
-          <p>This page explains the storefront’s observable data flows. The merchant has not yet supplied verified controller identity, contact details, retention periods, or jurisdiction-specific legal bases. Those items must be completed by the merchant for a full privacy notice.</p>
+          <p>This page explains the storefront’s observable data flows.</p>
+          <p class="legal-status" data-legal-status></p>
+          <p>Because there is no registered entity, there is no data controller to name, and no retention period or jurisdiction-specific legal basis is asserted. A real deployment must complete all four before collecting customer data.</p>
           <h2>Data used by the storefront</h2>
           <ul>
             <li>Catalogue pages load public product, category, image, price, stock, and article information from Selldone.</li>
@@ -63,7 +65,18 @@
           <h2>Customer choices</h2>
           <p>Customers can sign out from the account panel and can clear browser data through their browser. Requests concerning an order or account should be made through the authenticated Selldone customer area until the merchant publishes a verified support address.</p>
           <h2>Merchant action required</h2>
-          <p>Before collecting customer orders at scale, the merchant should publish its legal identity, privacy contact, processing purposes, legal bases, provider list, international-transfer safeguards, retention periods, and the rights available in each served market.</p>
+          <p>Before collecting customer orders at scale, a real deployment must publish its legal identity, privacy contact, processing purposes, legal bases, provider list, international-transfer safeguards, retention periods, and the rights available in each served market.</p>
+          <h2>Contact</h2>
+          <p class="legal-status" data-legal-status></p>
+          <dl class="legal-contact">
+            <div data-contact-row><dt>Trading name</dt><dd data-contact-entity></dd></div>
+            <div data-contact-row><dt>Email</dt><dd data-contact-email></dd></div>
+            <div data-contact-row><dt>Telephone</dt><dd data-contact-phone></dd></div>
+            <div data-contact-row><dt>Postal address</dt><dd data-contact-address></dd></div>
+            <div data-contact-row><dt>Opening hours</dt><dd data-contact-hours></dd></div>
+            <div data-contact-row><dt>Typical reply</dt><dd data-contact-response></dd></div>
+            <div data-contact-row><dt>Company registration</dt><dd data-contact-registration></dd></div>
+          </dl>
             </article>
           </div>
         </section>
