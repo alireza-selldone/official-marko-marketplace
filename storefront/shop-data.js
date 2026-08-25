@@ -12,7 +12,7 @@ import { getPublicConfig } from "../shared/runtime-config.js";
 import { shopConfig, slugify } from "./shop-config.js";
 import { selldoneImagePathToUrl } from "../dashboard/features/selldone-images.js";
 import { variantSizeOptions } from "./variant-options.js";
-import { AUDIENCE_PRODUCT_IDS, vendorForCategory } from "./marketplace-config.js";
+import { AUDIENCE_PRODUCT_IDS, assignVendor, vendorRoster } from "./marketplace-config.js";
 
 const cfg = getPublicConfig();
 
@@ -697,6 +697,10 @@ export async function loadCatalog() {
   });
 
   const cfg = await shopConfig();
+  /* Seller assignment needs to know who the sellers are. A failure here must
+     not take the catalog down with it: products still render, they just carry
+     no seller badge until the roster is available. */
+  const roster = vendorRoster(await loadVendors().catch(() => []));
   const index = categoryIndex(cfg, catMeta);
   const audienceConfig = Array.isArray(cfg.audiences) ? cfg.audiences : [];
   const audienceById = new Map(audienceConfig.map((audience) => [Number(audience.id), audience]));
@@ -709,7 +713,7 @@ export async function loadCatalog() {
       .filter(Number.isFinite);
     const shortcutIds = shortcutIdsFromApi.length ? shortcutIdsFromApi : mirroredAudienceIds(p.id);
     const variants = variantsOf(p);
-    const marketplaceVendor = vendorForCategory(p.category_id);
+    const marketplaceVendor = assignVendor(p, roster);
     /* A storage field can contain a size, material slug, or legacy token. Only
        the consistently size-shaped dimension is exposed to listing filters. */
     const stockedVariants = variants.filter((variant) => variant.qty > 0);

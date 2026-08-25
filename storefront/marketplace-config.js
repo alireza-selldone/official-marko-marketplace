@@ -89,6 +89,57 @@ export function vendorRoster(liveVendors = []) {
   return roster;
 }
 
+/* ---------- Who sells what ----------
+   Selldone reports `vendor_id: null` on every product and every category, so
+   the storefront has to decide. Two policies, because the right answer depends
+   on what the marketplace is demonstrating:
+
+   "category"  departments map to sellers, so Alio stays fashion and Merino
+               stays technology. Coherent, but a department nobody has mapped
+               leaves its products with no seller at all - which is exactly
+               what happened when seven pet departments arrived overnight and
+               forty products landed on the site owned by nobody.
+
+   "even"      every product is spread across the roster evenly.
+
+   Under either policy nothing is ever left unassigned: an unmapped department
+   falls through to the even split. That is the part that matters, and it is
+   why adding a department can no longer silently orphan its products. */
+export const VENDOR_ASSIGNMENT = "category";
+
+/* A hash rather than Math.random: the same product must land on the same
+   seller on every render, or its badge would change as you browse. */
+function evenVendor(productId, roster) {
+  if (!roster.length) return null;
+  const id = Number(productId) || 0;
+  let hash = 2166136261;
+  for (const ch of String(id)) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return roster[hash % roster.length];
+}
+
+export function assignVendor(product, roster = [], policy = VENDOR_ASSIGNMENT) {
+  const categoryId = Number(product?.category_id ?? product?.categoryId);
+  const productId = product?.id;
+  if (!roster.length) return null;
+
+  /* When Selldone starts populating vendor_id, that is the real answer and
+     everything below becomes dead code worth deleting. */
+  const declared = Number(product?.vendor_id);
+  if (declared) {
+    const match = roster.find((vendor) => vendor.id === declared);
+    if (match) return match;
+  }
+
+  if (policy === "category") {
+    const mapped = roster.find((vendor) => vendor.categoryIds?.includes(categoryId));
+    if (mapped) return mapped;
+  }
+  return evenVendor(productId, roster);
+}
+
 export const vendorForCategory = (categoryId) => {
   const id = Number(categoryId);
   return Object.values(MARKETPLACE_VENDORS).find((vendor) => vendor.categoryIds.includes(id)) || null;
