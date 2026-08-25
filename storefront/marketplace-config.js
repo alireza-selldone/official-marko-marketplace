@@ -8,6 +8,18 @@ export const MARKETPLACE_VENDORS = {
     categoryIds: [108846, 108847, 108848, 108849, 108850, 108851, 108852, 108853],
     accent: "coral",
   },
+  /* Pet arrived as seven departments in one overnight import. Mapping them to
+     the seller who handles pet keeps every department with a specialist, which
+     is what the vendor descriptions in the backoffice already promise. */
+  "kyle-mason": {
+    id: 6181,
+    slug: "kyle-mason",
+    name: "Kyle Mason",
+    eyebrow: "Pet marketplace",
+    description: "Food, clothing, toys, and everyday essentials for dogs, cats, rabbits, and turtles.",
+    categoryIds: [109024, 109025, 109026, 109027, 109028, 109029, 109030],
+    accent: "emerald",
+  },
   merino: {
     id: 6179,
     slug: "merino",
